@@ -3,6 +3,7 @@
     "description": "1c exchange module",
     "type": "bitrix-d7-module",
     "require": {
+        "composer/installers": "~1.0",
         "altayalp/ftp-client": "^1.0"
     },
     "authors": [
