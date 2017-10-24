@@ -1,7 +1,7 @@
 {
     "name": "local/exch1c",
     "description": "1c exchange module",
-    "type": "bitrix-d7-module-local",
+    "type": "bitrix-d7-module",
     "require": {
         "altayalp/ftp-client": "^1.0"
     },
