@@ -3,7 +3,6 @@
     "description": "1c exchange module",
     "type": "bitrix-d7-module-local",
     "require": {
-        "composer/installers": "~1.0",
         "altayalp/ftp-client": "^1.0"
     },
     "authors": [
@@ -11,10 +10,5 @@
             "name": "Denis M",
             "email": "decider@ya.ru"
         }
-    ],
-    "extra": {
-        "installer-paths": {
-            "modules/{$vendor}.{$name}/": ["type:bitrix-d7-module-local"]
-        }
-    }
+    ]
 }
