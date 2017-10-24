@@ -4,6 +4,7 @@ $arModConf = include __DIR__ . '/mod_conf.php';
 
 $local_exch1c_default_option = array(
     $arModConf['name'] . '_FTP_PATH' => "",
+    $arModConf['name'] . '_FTP_PORT' => "21",
     $arModConf['name'] . '_FTP_USER' => "",
     $arModConf['name'] . '_FTP_PASS' => "",
 );
