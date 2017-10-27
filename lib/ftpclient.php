@@ -3,8 +3,7 @@
 namespace Local\Exch1c;
 
 use \altayalp\FtpClient\Servers\FtpServer;
-use \altayalp\FtpClient\FileFactory;
-use Bitrix\Main\Diag\Debug;
+use altayalp\FtpClient\FileFactory;
 
 class FtpClient
 {
@@ -66,6 +65,7 @@ class FtpClient
 
     public function __construct($host, $user, $pass, $dirFtp, $dirServer, $dirServer) {
         $this->_host = $host;
+        $this->_port = $port;
         $this->_user = $user;
         $this->_pass = $pass;
         $this->_dirFtp = $dirFtp;
