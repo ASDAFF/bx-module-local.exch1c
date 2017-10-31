@@ -49,9 +49,13 @@ class local_exch1c extends CModule
     protected $PARTNER_CODE;
     protected $MODULE_CODE;
 
-    private $arTables = [];
+    private $arTables = [
+        'SyncHistory',
+    ];
 
-    private $arIndexes = [];
+    private $arIndexes = [
+        ['tableClass' => 'SyncHistory', 'field' => 'dtsync'],
+    ];
 
     public function __construct(){
 
@@ -206,7 +210,7 @@ class local_exch1c extends CModule
 
         Loader::includeModule($this->MODULE_ID);
 
-        // Создание таблицы обращений
+        // Создание таблицы
         // TODO: переписать на получение файлов из папки lib\tables, все что в ней - таблицы
 
         foreach ($this->arTables as $tableName) {

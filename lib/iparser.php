@@ -8,5 +8,7 @@ interface IParser
 
     public function getFileName();
 
+    public function setDir($dir);
+
     public function getArray();
 }

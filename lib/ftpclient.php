@@ -63,7 +63,7 @@ class FtpClient
      */
     private $_parser;
 
-    public function __construct($host, $user, $pass, $dirFtp, $dirServer, $dirServer) {
+    public function __construct($host, $user, $pass, $dirFtp, $dirServer, $port = 21) {
         $this->_host = $host;
         $this->_port = $port;
         $this->_user = $user;
@@ -118,6 +118,7 @@ class FtpClient
         $fileFactory->download($filePathRemote, $filePathLocal);
 
         // получение информации из файла
+        $this->_parser->setDir($this->_getServerDir());
         $arData = $this->_parser->getArray();
 
         return $arData;
