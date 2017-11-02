@@ -28,8 +28,8 @@ $xmlParser = new ParserUser($fileName, $filePrefix);
 $ftpClient->setParser($xmlParser);
 $arData = $ftpClient->syncFile();
 
-$syncer = new SyncerUser($arData);
-$syncer->run();
+$syncer = new SyncerUser();
+$syncer->import($arData);
 
 \Bitrix\Main\Diag\Debug::dump($fileName);
 \Bitrix\Main\Diag\Debug::dump($filePrefix);

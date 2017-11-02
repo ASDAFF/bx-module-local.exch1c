@@ -57,6 +57,22 @@ class local_exch1c extends CModule
         ['tableClass' => 'SyncHistory', 'field' => 'dtsync'],
     ];
 
+    private $arCstmProps = [
+        ['USER', 'UF_UR_ADR', 'string', 'Юридический адрес'],
+        ['USER', 'UF_VK_OTHER', 'string', 'Вконтакте'],
+        ['USER', 'UF_INST_OTHER', 'string', 'Instagram'],
+        ['USER', 'UF_FB_OTHER', 'string', 'Facebook'],
+        ['USER', 'UF_DISCOUNT_COMMON', 'string', 'Скидка'],
+        ['USER', 'UF_DISCOUNT_VHD', 'string', 'Скидка на входные двери'],
+        ['USER', 'UF_DISCOUNT_MKD', 'string', 'Скидка на межкомнатные двери'],
+        ['USER', 'UF_DISCOUNT_POL', 'string', 'Скидка на напольные покрытия'],
+        ['USER', 'UF_DISCOUNT_FUR', 'string', 'Скидка на фурнитуру'],
+        ['USER', 'UF_OTSROCHKA_DAY', 'string', 'Отсрочка дней'],
+        ['USER', 'UF_OTSROCHKA_RUB', 'string', 'Отсрочка рублей'],
+        ['USER', 'UF_VITR_ALL', 'string', 'Витрин всего'],
+        ['USER', 'UF_KONT_LITSO_FIO', 'string', 'Контактное лицо'],
+    ];
+
     public function __construct(){
 
         $arModuleVersion = [];
@@ -157,7 +173,9 @@ class local_exch1c extends CModule
             ModuleManager::registerModule($this->MODULE_ID);
 
             try {
+
                 $this->InstallDB();
+                $this->InstallProps();
                 $this->InstallEvents();
                 $this->InstallFiles();
                 $this->InstallTasks();
@@ -192,8 +210,10 @@ class local_exch1c extends CModule
             $this->UnInstallFiles();
             $this->UnInstallTasks();
 
-            if($request->get('savedata') != 'Y') {
-                $this->UnInstallDB();
+            $this->UnInstallDB();
+
+            if($request->get('saveprops') != 'Y') {
+                $this->UnInstallProps();
             }
 
             ModuleManager::unRegisterModule($this->MODULE_ID);
@@ -242,6 +262,9 @@ class local_exch1c extends CModule
      */
     public function UnInstallDB() {
 
+        $context = Application::getInstance()->getContext();
+        $request = $context->getRequest();
+
         Loader::includeModule($this->MODULE_ID);
 
         // Удаляем индексы
@@ -257,15 +280,18 @@ class local_exch1c extends CModule
 
         }
 
-        foreach ($this->arTables as $tableName) {
-            $tablePath = $this->arModConf['ns'] . "\\Tables\\" . $tableName . "Table";
+        if($request->get('savedata') != 'Y') {
 
-            Application::getConnection($tablePath::getConnectionName())
-                ->queryExecute('drop table if exists '.Base::getInstance($tablePath)->getDBTableName());
+            foreach ($this->arTables as $tableName) {
+                $tablePath = $this->arModConf['ns'] . "\\Tables\\" . $tableName . "Table";
+
+                Application::getConnection($tablePath::getConnectionName())
+                    ->queryExecute('drop table if exists ' . Base::getInstance($tablePath)->getDBTableName());
+            }
+
+            // удаление сохраненных настроек модуля
+            Option::delete($this->MODULE_ID);
         }
-
-        // удаление сохраненных настроек модуля
-        Option::delete($this->MODULE_ID);
 
         return true;
 
@@ -392,6 +418,121 @@ class local_exch1c extends CModule
      * @return bool
      */
     public function UnInstallTasks() {
+        return true;
+    }
+
+    /**
+     * Работа с полями инфоблоков и сущностей
+     * @return bool
+     */
+    public function InstallProps() {
+
+        // получим список пользовательских полей
+        $arSort = ['ENTITY_ID' => 'ASC'];
+        $arAddCstmProps = [];
+        foreach ($this->arCstmProps as $arCstmProp) {
+
+            $arFilter = [
+                'ENTITY_ID' => $arCstmProp[0],
+                'FIELD_NAME' => $arCstmProp[1],
+            ];
+
+            $dbRes = CUserTypeEntity::GetList( $arSort, $arFilter );
+            $arRes = $dbRes->Fetch();
+
+            if(!$arRes) {
+                $arAddCstmProps[] = $arCstmProp;
+            }
+        }
+
+        $oUserTypeEntity = new CUserTypeEntity();
+
+        foreach ($arAddCstmProps as $arAddCstmProp) {
+
+            $aUserFields = [
+                'ENTITY_ID' => $arAddCstmProp[0],
+                'FIELD_NAME' => $arAddCstmProp[1],
+                'USER_TYPE_ID' => $arAddCstmProp[2],
+                'XML_ID' => 'XML_ID_' . $arAddCstmProp[0] . '_' . $arAddCstmProp[1] . '_FIELD',
+                'SORT' => 500,
+                'MULTIPLE' => 'N',
+                'MANDATORY' => 'N',
+                'SHOW_FILTER' => 'N',
+                'SHOW_IN_LIST' => '',
+                'EDIT_IN_LIST' => '',
+                'IS_SEARCHABLE' => 'N',
+                /*
+                * Дополнительные настройки поля (зависят от типа).
+                * В нашем случае для типа string
+                */
+                'SETTINGS' => array(
+                    'DEFAULT_VALUE' => '',
+                    'SIZE' => '20',
+                    'ROWS' => '1',
+                    'MIN_LENGTH' => '0',
+                    'MAX_LENGTH' => '0',
+                    'REGEXP' => '',
+                ),
+                /* Подпись в форме редактирования */
+                'EDIT_FORM_LABEL' => array(
+                    'ru' => $arAddCstmProp[3],
+                    'en' => $arAddCstmProp[3],
+                ),
+                /* Заголовок в списке */
+                'LIST_COLUMN_LABEL' => array(
+                    'ru' => $arAddCstmProp[3],
+                    'en' => $arAddCstmProp[3],
+                ),
+                /* Подпись фильтра в списке */
+                'LIST_FILTER_LABEL' => array(
+                    'ru' => $arAddCstmProp[3],
+                    'en' => $arAddCstmProp[3],
+                ),
+                /* Сообщение об ошибке (не обязательное) */
+                'ERROR_MESSAGE' => array(
+                    'ru' => 'Ошибка при заполнении пользовательского свойства ' . $arAddCstmProp[3],
+                    'en' => 'Ошибка при заполнении пользовательского свойства ' . $arAddCstmProp[3],
+                ),
+                /* Помощь */
+                'HELP_MESSAGE' => array(
+                    'ru' => '',
+                    'en' => '',
+                ),
+            ];
+
+            $iUserFieldId = $oUserTypeEntity->Add($aUserFields);
+        }
+
+        return true;
+    }
+
+    /**
+     * Работа с полями инфоблоков и сущностей
+     * @return bool
+     */
+    public function UnInstallProps()
+    {
+        // получим список пользовательских полей
+        $arSort = ['ENTITY_ID' => 'ASC'];
+        $oUserTypeEntity = new CUserTypeEntity();
+
+        foreach ($this->arCstmProps as $arCstmProp) {
+
+            $arFilter = [
+                'ENTITY_ID' => $arCstmProp[0],
+                'FIELD_NAME' => $arCstmProp[1],
+            ];
+
+            $dbRes = CUserTypeEntity::GetList( $arSort, $arFilter );
+            $arRes = $dbRes->Fetch();
+
+            if(!$arRes) {
+                continue;
+            }
+
+            $oUserTypeEntity->Delete( $arRes["ID"] );
+        }
+
         return true;
     }
 }
