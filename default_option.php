@@ -14,5 +14,7 @@ $local_exch1c_default_option = array(
     $arModConf['name'] . '_FILE_NAME_USERS' => "users.xml",
     $arModConf['name'] . '_FILE_NAME_STORES' => "stores.xml",
     $arModConf['name'] . '_FILE_NAME_ORDERS' => "orders.xml",
+    $arModConf['name'] . '_IB_CODE' => "LOCALEXCH1C_REGREQUEST",
+    $arModConf['name'] . '_EMAIL_TMPL_REGREQUEST' => "LOCALEXCH1C_REGREQUEST",
 );
 ?>

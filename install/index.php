@@ -49,29 +49,15 @@ class local_exch1c extends CModule
     protected $PARTNER_CODE;
     protected $MODULE_CODE;
 
-    private $arTables = [
-        'SyncHistory',
-    ];
+    private $arTables = [];
 
-    private $arIndexes = [
-        ['tableClass' => 'SyncHistory', 'field' => 'dtsync'],
-    ];
+    private $arIndexes = [];
 
-    private $arCstmProps = [
-        ['USER', 'UF_UR_ADR', 'string', 'Юридический адрес'],
-        ['USER', 'UF_VK_OTHER', 'string', 'Вконтакте'],
-        ['USER', 'UF_INST_OTHER', 'string', 'Instagram'],
-        ['USER', 'UF_FB_OTHER', 'string', 'Facebook'],
-        ['USER', 'UF_DISCOUNT_COMMON', 'string', 'Скидка'],
-        ['USER', 'UF_DISCOUNT_VHD', 'string', 'Скидка на входные двери'],
-        ['USER', 'UF_DISCOUNT_MKD', 'string', 'Скидка на межкомнатные двери'],
-        ['USER', 'UF_DISCOUNT_POL', 'string', 'Скидка на напольные покрытия'],
-        ['USER', 'UF_DISCOUNT_FUR', 'string', 'Скидка на фурнитуру'],
-        ['USER', 'UF_OTSROCHKA_DAY', 'string', 'Отсрочка дней'],
-        ['USER', 'UF_OTSROCHKA_RUB', 'string', 'Отсрочка рублей'],
-        ['USER', 'UF_VITR_ALL', 'string', 'Витрин всего'],
-        ['USER', 'UF_KONT_LITSO_FIO', 'string', 'Контактное лицо'],
-    ];
+    private $arCstmProps = [];
+
+    private $arIblockTypes = [];
+
+    private $arIblocks = [];
 
     public function __construct(){
 
@@ -87,6 +73,26 @@ class local_exch1c extends CModule
             'operation_description.php',
             'task_description.php',
         ];
+
+        if ($this->arModConf['arCstmProps']) {
+            $this->arCstmProps = $this->arModConf['arCstmProps'];
+        }
+
+        if ($this->arModConf['arTables']) {
+            $this->arTables = $this->arModConf['arTables'];
+        }
+
+        if ($this->arModConf['arIndexes']) {
+            $this->arIndexes = $this->arModConf['arIndexes'];
+        }
+
+        if ($this->arModConf['arIblockTypes']) {
+            $this->arIblockTypes = $this->arModConf['arIblockTypes'];
+        }
+
+        if ($this->arModConf['arIblocks']) {
+            $this->arIblocks = $this->arModConf['arIblocks'];
+        }
 
         if (is_array($arModuleVersion) && array_key_exists('VERSION', $arModuleVersion)) {
             $this->MODULE_VERSION = $arModuleVersion['VERSION'];
@@ -154,6 +160,15 @@ class local_exch1c extends CModule
     }
 
     /**
+     * @return bool|CDatabase
+     */
+    private function getDB() {
+        global $DB;
+
+        return $DB;
+    }
+
+    /**
      * Проверка версии ядра системы
      *
      * @return bool
@@ -175,6 +190,7 @@ class local_exch1c extends CModule
             try {
 
                 $this->InstallDB();
+                $this->InstallIblocks();
                 $this->InstallProps();
                 $this->InstallEvents();
                 $this->InstallFiles();
@@ -216,6 +232,10 @@ class local_exch1c extends CModule
                 $this->UnInstallProps();
             }
 
+            if($request->get('saveiblocks') != 'Y') {
+                $this->UnInstallIblocks();
+            }
+
             ModuleManager::unRegisterModule($this->MODULE_ID);
 
             $APPLICATION->IncludeAdminFile(Loc::getMessage($this->arModConf['name']."_UNINSTALL_TITLE"), $this->getPath()."/install/unstep2.php");
@@ -246,10 +266,10 @@ class local_exch1c extends CModule
         $connection = Application::getConnection();
         foreach ($this->arIndexes as $arIndex) {
 
-            $tblName = Base::getInstance($this->arModConf['nsTables'] . "\\" . $arIndex['tableClass'] . "Table")->getDBTableName();
+            $tblName = Base::getInstance($this->arModConf['nsTables'] . "\\" . $arIndex[0] . "Table")->getDBTableName();
 
-            $sql = 'CREATE INDEX idx_' . $tblName . '_'. $arIndex['field']
-                . ' on ' . $tblName . '('. $arIndex['field'] .')';
+            $sql = 'CREATE INDEX idx_' . $tblName . '_'. $arIndex[1]
+                . ' on ' . $tblName . '('. $arIndex[1] .')';
 
             $connection->queryExecute($sql);
 
@@ -270,10 +290,9 @@ class local_exch1c extends CModule
         // Удаляем индексы
         $connection = Application::getConnection();
         foreach ($this->arIndexes as $arIndex) {
+            $tblName = Base::getInstance($this->arModConf['nsTables'] . "\\" . $arIndex[0] . "Table")->getDBTableName();
 
-            $tblName = Base::getInstance($this->arModConf['nsTables'] . "\\" . $arIndex['tableClass'] . "Table")->getDBTableName();
-
-            $sql = 'DROP INDEX idx_' . $tblName . '_'. $arIndex['field']
+            $sql = 'DROP INDEX idx_' . $tblName . '_'. $arIndex[1]
                 . ' on ' . $tblName;
 
             $connection->queryExecute($sql);
@@ -531,6 +550,84 @@ class local_exch1c extends CModule
             }
 
             $oUserTypeEntity->Delete( $arRes["ID"] );
+        }
+
+        return true;
+    }
+
+    /**
+     * Работа с инфоблоками
+     * @return bool
+     */
+    public function InstallIblocks() {
+        $db = $this->getDB();
+
+        // создаем типы инфоблоков
+        foreach ($this->arIblockTypes as $IBTypeCODE => $arIblockType) {
+
+            $ibtCode = strtolower($this->arModConf['prefix'] . '_' . $IBTypeCODE);
+            $dbIbt = CIBlockType::GetByID($ibtCode);
+            $arIbt = $dbIbt->GetNext();
+
+            if($arIbt) {
+                continue;
+            }
+
+            $arFields = [
+                'ID' => $ibtCode,
+                'SECTIONS' => $arIblockType['SECTIONS'],
+                'IN_RSS' => 'N',
+                'SORT' => $arIblockType['SORT'],
+                'LANG' => $arIblockType['LANG'],
+            ];
+
+            $obBlocktype = new \CIBlockType();
+            $db->StartTransaction();
+            $res = $obBlocktype->Add($arFields);
+
+            if(!$res) {
+                $db->Rollback();
+
+                // TODO: изменить возврат сообщения об ошибке
+                echo 'Error: '.$obBlocktype->LAST_ERROR.'<br>';
+            } else {
+                $db->Commit();
+            }
+
+        }
+
+        // создаем инфоблоки
+
+        return true;
+    }
+
+    /**
+     * Удаление инфоблоков
+     * @return bool
+     */
+    public function UnInstallIblocks() {
+        $db = $this->getDB();
+
+        // удаляем инфоблоки
+
+        // удаляем типы инфоблоков
+        foreach ($this->arIblockTypes as $IBTypeCODE => $arIblockType) {
+
+            $ibtCode = strtolower($this->arModConf['prefix'] . '_' . $IBTypeCODE);
+            $dbIbt = CIBlockType::GetByID($ibtCode);
+            $arIbt = $dbIbt->GetNext();
+
+            if(!$arIbt) {
+                continue;
+            }
+
+            $db->StartTransaction();
+            if(!CIBlockType::Delete($ibtCode)) {
+                $db->Rollback();
+                echo 'Delete error!';
+            } else {
+                $db->Commit();
+            }
         }
 
         return true;
