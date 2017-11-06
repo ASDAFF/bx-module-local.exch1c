@@ -558,9 +558,11 @@ class local_exch1c extends CModule
     /**
      * Работа с инфоблоками
      * @return bool
+     * @throws Exception
      */
     public function InstallIblocks() {
         $db = $this->getDB();
+        $siteId = \Bitrix\Main\Context::getCurrent()->getSite();
 
         // создаем типы инфоблоков
         foreach ($this->arIblockTypes as $IBTypeCODE => $arIblockType) {
@@ -597,6 +599,29 @@ class local_exch1c extends CModule
         }
 
         // создаем инфоблоки
+        foreach ($this->arIblocks as $IBCODE => $arIblock) {
+
+            $ibCode = strtolower($this->arModConf['prefix'] . '_' . $IBCODE);
+            $ibtCode = strtolower($this->arModConf['prefix'] . '_' . $arIblock['TYPE']);
+
+            $rIb = Bitrix\Iblock\IblockTable::add(array(
+                'NAME' => $arIblock['NAME'],
+                'IBLOCK_TYPE_ID' => $ibtCode,
+                'CODE' => $ibCode,
+            ));
+
+            if (!$rIb->isSuccess()) {
+                // TODO: изменить возврат сообщения об ошибке
+                echo 'Error: iblock '.$ibCode.'<br>';
+
+                throw new Exception('Can not create' . $ibCode);
+            }
+
+//            \Bitrix\Iblock\IblockSiteTable::add([
+//                'IBLOCK_ID' => $rIb->getId(),
+//                'SITE_ID' => $siteId,
+//            ]);
+        }
 
         return true;
     }
@@ -609,6 +634,28 @@ class local_exch1c extends CModule
         $db = $this->getDB();
 
         // удаляем инфоблоки
+        foreach ($this->arIblocks as $IBCODE => $arIblock) {
+
+            $ibCode = strtolower($this->arModConf['prefix'] . '_' . $IBCODE);
+            $ibtCode = strtolower($this->arModConf['prefix'] . '_' . $arIblock['TYPE']);
+            $dbIBList = Bitrix\Iblock\IblockTable::getList([
+                'select' => ['ID'],
+                'filter' => ['IBLOCK_TYPE_ID' => $ibtCode, 'CODE' => $ibCode],
+            ]);
+
+            $arIB = $dbIBList->fetch();
+
+            if(!$arIB['ID']) {
+                continue;
+            }
+
+            $rIb = Bitrix\Iblock\IblockTable::delete($arIB['ID']);
+
+            if (!$rIb->isSuccess()) {
+                // TODO: изменить возврат сообщения об ошибке
+                echo 'Error: iblock '.$ibCode.'<br>';
+            }
+        }
 
         // удаляем типы инфоблоков
         foreach ($this->arIblockTypes as $IBTypeCODE => $arIblockType) {

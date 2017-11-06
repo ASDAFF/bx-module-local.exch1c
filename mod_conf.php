@@ -86,6 +86,7 @@ $arIblockTypes = [
 $arIblocks = [
     'REGREQUESTS' => [
         'TYPE' => 'FORMS',
+        'NAME' => 'Запросы на регистрацию',
     ],
 ];
 
