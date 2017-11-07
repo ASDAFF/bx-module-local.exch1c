@@ -87,6 +87,11 @@ $arIblocks = [
     'REGREQUESTS' => [
         'TYPE' => 'FORMS',
         'NAME' => 'Запросы на регистрацию',
+
+        'PROPS' => [
+            ['NAME' => 'ФИО', 'CODE' => 'FIO'],
+            ['NAME' => 'Телефон', 'CODE' => 'PHONE'],
+        ]
     ],
 ];
 

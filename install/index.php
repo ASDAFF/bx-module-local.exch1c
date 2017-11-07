@@ -226,7 +226,9 @@ class local_exch1c extends CModule
             $this->UnInstallFiles();
             $this->UnInstallTasks();
 
-            $this->UnInstallDB();
+            if($request->get('savedata') != 'Y') {
+                $this->UnInstallDB();
+            }
 
             if($request->get('saveprops') != 'Y') {
                 $this->UnInstallProps();
@@ -241,6 +243,37 @@ class local_exch1c extends CModule
             $APPLICATION->IncludeAdminFile(Loc::getMessage($this->arModConf['name']."_UNINSTALL_TITLE"), $this->getPath()."/install/unstep2.php");
         }
 
+    }
+
+    /**
+     * Проверка индекса на существование
+     * @param $tblName
+     * @param $idxName
+     * @param null $connection
+     * @return bool
+     */
+    static public function isIdxExists($tblName, $idxName, $connection = null) {
+        if (!$connection) {
+            $connection = Application::getConnection();
+        }
+
+        // получим имя БД
+        // как вариант можно так
+        // $arCons = \Bitrix\Main\Config\Configuration::getValue('connections');
+        // $dbName = $arCons['default']['database'];
+
+        // но мы получим так
+        $dbName = $connection->getDatabase();
+
+        $sqlCheck = "SELECT count(1) idx_exist
+                FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE table_schema = '".$dbName."'
+                AND   table_name   = '".$tblName."'
+                AND   index_name   = '".$idxName."'";
+
+        $idxCnt = $connection->queryScalar($sqlCheck);
+
+        return $idxCnt > 0;
     }
 
     /**
@@ -267,8 +300,13 @@ class local_exch1c extends CModule
         foreach ($this->arIndexes as $arIndex) {
 
             $tblName = Base::getInstance($this->arModConf['nsTables'] . "\\" . $arIndex[0] . "Table")->getDBTableName();
+            $idxName = 'idx_' . $tblName . '_'. $arIndex[1];
 
-            $sql = 'CREATE INDEX idx_' . $tblName . '_'. $arIndex[1]
+            if (self::isIdxExists($tblName, $idxName, $connection)) {
+                continue;
+            }
+
+            $sql = 'CREATE INDEX ' . $idxName
                 . ' on ' . $tblName . '('. $arIndex[1] .')';
 
             $connection->queryExecute($sql);
@@ -282,35 +320,35 @@ class local_exch1c extends CModule
      */
     public function UnInstallDB() {
 
-        $context = Application::getInstance()->getContext();
-        $request = $context->getRequest();
-
         Loader::includeModule($this->MODULE_ID);
 
         // Удаляем индексы
         $connection = Application::getConnection();
         foreach ($this->arIndexes as $arIndex) {
             $tblName = Base::getInstance($this->arModConf['nsTables'] . "\\" . $arIndex[0] . "Table")->getDBTableName();
+            $idxName = 'idx_' . $tblName . '_'. $arIndex[1];
 
-            $sql = 'DROP INDEX idx_' . $tblName . '_'. $arIndex[1]
+            if (!self::isIdxExists($tblName, $idxName, $connection)) {
+                continue;
+            }
+
+            $sql = 'DROP INDEX ' . $idxName
                 . ' on ' . $tblName;
 
             $connection->queryExecute($sql);
 
         }
 
-        if($request->get('savedata') != 'Y') {
+        // удаляем таблицы
+        foreach ($this->arTables as $tableName) {
+            $tablePath = $this->arModConf['ns'] . "\\Tables\\" . $tableName . "Table";
 
-            foreach ($this->arTables as $tableName) {
-                $tablePath = $this->arModConf['ns'] . "\\Tables\\" . $tableName . "Table";
-
-                Application::getConnection($tablePath::getConnectionName())
-                    ->queryExecute('drop table if exists ' . Base::getInstance($tablePath)->getDBTableName());
-            }
-
-            // удаление сохраненных настроек модуля
-            Option::delete($this->MODULE_ID);
+            Application::getConnection($tablePath::getConnectionName())
+                ->queryExecute('drop table if exists ' . Base::getInstance($tablePath)->getDBTableName());
         }
+
+        // удаление сохраненных настроек модуля
+        Option::delete($this->MODULE_ID);
 
         return true;
 
@@ -562,7 +600,9 @@ class local_exch1c extends CModule
      */
     public function InstallIblocks() {
         $db = $this->getDB();
-        $siteId = \Bitrix\Main\Context::getCurrent()->getSite();
+        $rsSites = CSite::GetList($by="sort", $order="desc", ['ACTIVE' => 'Y']);
+        $arSite = $rsSites->Fetch();
+        $siteId = $arSite['ID'];
 
         // создаем типы инфоблоков
         foreach ($this->arIblockTypes as $IBTypeCODE => $arIblockType) {
@@ -604,23 +644,54 @@ class local_exch1c extends CModule
             $ibCode = strtolower($this->arModConf['prefix'] . '_' . $IBCODE);
             $ibtCode = strtolower($this->arModConf['prefix'] . '_' . $arIblock['TYPE']);
 
-            $rIb = Bitrix\Iblock\IblockTable::add(array(
-                'NAME' => $arIblock['NAME'],
-                'IBLOCK_TYPE_ID' => $ibtCode,
-                'CODE' => $ibCode,
-            ));
+            $ib = new CIBlock();
+            $arFields = Array(
+                "ACTIVE" => 'Y',
+                "NAME" => $arIblock['NAME'],
+                "CODE" => $ibCode,
+                "IBLOCK_TYPE_ID" => $ibtCode,
+                "SITE_ID" => [$siteId],
+                "LID" => $siteId,
+                "SORT" => 1000,
+                "WORKFLOW" => 'N',
+                //"GROUP_ID" => Array("2"=>"D", "3"=>"R")
+            );
 
-            if (!$rIb->isSuccess()) {
-                // TODO: изменить возврат сообщения об ошибке
-                echo 'Error: iblock '.$ibCode.'<br>';
+            $ibId = $ib->Add($arFields);
 
-                throw new Exception('Can not create' . $ibCode);
+            if ($ibId > 0) {
+                // добавляем свойства
+                foreach ($arIblock['PROPS'] as $arProp) {
+
+                    $dbProperties = CIBlockProperty::GetList([], ["IBLOCK_ID" => $ibId, 'CODE' => $arProp['CODE']]);
+                    if ($dbProperties->SelectedRowsCount() > 0) {
+                        continue;
+                    }
+
+                    $ibp = new CIBlockProperty;
+
+                    $arFields = Array(
+                        "NAME" => $arProp['NAME'],
+                        "ACTIVE" => "Y",
+                        "SORT" => 100, // Сортировка
+                        "CODE" => $arProp['CODE'],
+                        "PROPERTY_TYPE" => "S", // Строка
+                        "ROW_COUNT" => 1, // Количество строк
+                        "COL_COUNT" => 60, // Количество столбцов
+                        "IBLOCK_ID" => $ibId
+                    );
+                    $propId = $ibp->Add($arFields);
+
+                    if (!$propId) {
+                        \Bitrix\Main\Diag\Debug::dump($ibp->LAST_ERROR);
+                        die();
+                    }
+                }
+            } else {
+                \Bitrix\Main\Diag\Debug::dump($ib->LAST_ERROR);
+                die();
             }
 
-//            \Bitrix\Iblock\IblockSiteTable::add([
-//                'IBLOCK_ID' => $rIb->getId(),
-//                'SITE_ID' => $siteId,
-//            ]);
         }
 
         return true;
@@ -638,22 +709,21 @@ class local_exch1c extends CModule
 
             $ibCode = strtolower($this->arModConf['prefix'] . '_' . $IBCODE);
             $ibtCode = strtolower($this->arModConf['prefix'] . '_' . $arIblock['TYPE']);
-            $dbIBList = Bitrix\Iblock\IblockTable::getList([
-                'select' => ['ID'],
-                'filter' => ['IBLOCK_TYPE_ID' => $ibtCode, 'CODE' => $ibCode],
-            ]);
+            $arOrder = [];
+            $arFilter = ['TYPE' => $ibtCode, 'CODE' => $ibCode];
+            $dbIBList = CIBlock::GetList($arOrder, $arFilter);
 
-            $arIB = $dbIBList->fetch();
+            if ($dbIBList->SelectedRowsCount() == 1) {
 
-            if(!$arIB['ID']) {
-                continue;
-            }
+                $arIBList = $dbIBList->GetNext();
 
-            $rIb = Bitrix\Iblock\IblockTable::delete($arIB['ID']);
-
-            if (!$rIb->isSuccess()) {
-                // TODO: изменить возврат сообщения об ошибке
-                echo 'Error: iblock '.$ibCode.'<br>';
+                $db->StartTransaction();
+                if (!CIBlock::Delete($arIBList['ID'])) {
+                    $db->Rollback();
+                    echo 'Delete error!';
+                } else {
+                    $db->Commit();
+                }
             }
         }
 
