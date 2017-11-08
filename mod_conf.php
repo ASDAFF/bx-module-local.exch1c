@@ -1,5 +1,12 @@
 <?php if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true) die();
 
+$arConfCommon = [
+    'name' => 'LOCAL.EXCH1C',
+    'ns' => 'Local\Exch1c',
+    'nsTables' => 'Local\Exch1c\Tables',
+    'prefix' => 'local_exch1c',
+];
+
 /**
  * @var array $arCstmProps
  * пользовательские поля
@@ -101,7 +108,7 @@ $arIblocks = [
  */
 $arEmailTypes = [
     [
-        "EVENT_NAME"  => "LOCALEXCH1C_REGREQUEST",
+        "EVENT_NAME"  => \Bitrix\Main\Config\Option::get(strtolower($arConfCommon["name"]), $arConfCommon["name"].'_EMAIL_TMPL_REGREQUEST'), //"LOCALEXCH1C_REGREQUEST",
         "NAME"        => "Запрос на регистрацию",
         "LID"         => "ru",
         "SORT"        => 100,
@@ -133,11 +140,7 @@ $arEmailTmpls = [
 ];
 
 
-$arConfig = [
-    'name' => 'LOCAL.EXCH1C',
-    'ns' => 'Local\Exch1c',
-    'nsTables' => 'Local\Exch1c\Tables',
-    'prefix' => 'local_exch1c',
+$arConfig = array_merge($arConfCommon, [
     'arCstmProps' => $arCstmProps,
     'arTables' => $arTables,
     'arIndexes' => $arIndexes,
@@ -145,6 +148,6 @@ $arConfig = [
     'arIblocks' => $arIblocks,
     'arEmailTypes' => $arEmailTypes,
     'arEmailTmpls' => $arEmailTmpls,
-];
+]);
 
 return $arConfig;

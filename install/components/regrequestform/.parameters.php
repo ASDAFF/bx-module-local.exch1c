@@ -50,12 +50,12 @@ $arComponentParameters = [
             "REFRESH" => "Y"
         ],
         // Произвольный параметр типа СТРОКА
-        "SECTION_IDS" => [
+        "MSG_SUCCESS" => [
             "PARENT" => "SETTINGS",
-            "NAME" => Loc::getMessage('EXAMPLE_COMPSIMPLE_PROP_SECTION_IDS'),
+            "NAME" => "Сообщение при успешной отправке данных",
             "TYPE" => "STRING",
             "MULTIPLE" => "N",
-            "DEFAULT" => "",
+            "DEFAULT" => "Ваше сообщение отправлено.\nСпасибо за обращение.",
             "COLS" => 25
         ],
         // Настройки кэширования

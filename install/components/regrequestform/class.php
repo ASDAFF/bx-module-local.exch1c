@@ -91,7 +91,6 @@ class LocalExch1CRegRequestForm extends CBitrixComponent {
         );
 
         if(	   !$valid
-            || !$name
             || !$phone )
         {
             $arResult['msg'] = "Заполните все поля.";
@@ -125,12 +124,14 @@ class LocalExch1CRegRequestForm extends CBitrixComponent {
 
         $arResult = array(
             'hasError' => false,
-            'msg' => "Ваше сообщение отправлено.\nСпасибо за обращение."
+            'msg' => $this->arParams["MSG_SUCCESS"],
         );
         echo json_encode($arResult);
 
         // шлем почту
-        CEvent::Send("LOCALEXCH1C_REGREQUEST", SITE_ID, $arMsgData);
+        $tmplName = \Bitrix\Main\Config\Option::get('local.exch1c', 'LOCAL.EXCH1C_EMAIL_TMPL_REGREQUEST');
+
+        CEvent::Send($tmplName, SITE_ID, $arMsgData);
 
     }
 
@@ -147,7 +148,7 @@ class LocalExch1CRegRequestForm extends CBitrixComponent {
         $this->arResult['FIO'] = '';
         $this->arResult['PHONE'] = '';
 
-        if($this->_request->isPost()) {
+        if($this->_request->isPost() && $this->_request['formId'] == 'SendFormRegRequest') {
             $this->_app()->restartBuffer();
             //\Bitrix\Main\Diag\Debug::dump($this->_request['REGISTER']);
             $this->_regRequest();

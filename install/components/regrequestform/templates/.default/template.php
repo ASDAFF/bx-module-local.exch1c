@@ -6,6 +6,7 @@ if ($USER->IsAuthorized()): ?>
     <div id="reg-area">
 
         <form method="post" action="" name="jsSendFormRegRequest">
+            <input type="hidden" name="formId" value="SendFormRegRequest">
             <?=bitrix_sessid_post();?>
 
             <div class="row">
@@ -17,11 +18,11 @@ if ($USER->IsAuthorized()): ?>
                         <span>ФИО</span>
                         <input type="text" name="REGISTER[FIO]" value="<?=$_POST['REGISTER']['FIO']?>">
                         <span>Телефон</span>
-                        <input type="text" name="REGISTER[PHONE]" value="<?=$_POST['REGISTER']['PHONE']?>">
+                        <input type="text" name="REGISTER[PHONE]" value="<?=$_POST['REGISTER']['PHONE']?>" class="masked-phone" required>
 
 
-                        <div class="text-center errors-container">
-
+                        <div class="text-center">
+                            <p class="errors-container errortext"></p>
                         </div>
 
                         <input type="submit" name="submit" value="Отправить заявку" class="login-block-container__btn">
