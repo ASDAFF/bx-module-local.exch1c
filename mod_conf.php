@@ -95,6 +95,44 @@ $arIblocks = [
     ],
 ];
 
+/**
+ * @var array $arEmailTypes
+ * инфоблоки
+ */
+$arEmailTypes = [
+    [
+        "EVENT_NAME"  => "LOCALEXCH1C_REGREQUEST",
+        "NAME"        => "Запрос на регистрацию",
+        "LID"         => "ru",
+        "SORT"        => 100,
+        "DESCRIPTION" => "
+            #FIO# - ФИО
+            #PHONE# - Телефон
+        "
+    ]
+];
+
+/**
+ * @var array $arEmailTypes
+ * инфоблоки
+ */
+$arEmailTmpls = [
+    [
+        "ACTIVE" => "Y",
+        "EVENT_NAME" => "LOCALEXCH1C_REGREQUEST",
+        "EMAIL_FROM" => "#DEFAULT_EMAIL_FROM#",
+        "EMAIL_TO" => "#DEFAULT_EMAIL_FROM#",
+        "BCC" => "",
+        "SUBJECT" => "Запрос на регистрацию с сайта #SITE_NAME#",
+        "BODY_TYPE" => "text",
+        "MESSAGE" => "
+ФИО: #FIO#
+Телефон: #PHONE#
+",
+    ],
+];
+
+
 $arConfig = [
     'name' => 'LOCAL.EXCH1C',
     'ns' => 'Local\Exch1c',
@@ -105,6 +143,8 @@ $arConfig = [
     'arIndexes' => $arIndexes,
     'arIblockTypes' => $arIblockTypes,
     'arIblocks' => $arIblocks,
+    'arEmailTypes' => $arEmailTypes,
+    'arEmailTmpls' => $arEmailTmpls,
 ];
 
 return $arConfig;
