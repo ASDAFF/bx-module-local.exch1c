@@ -108,7 +108,7 @@ $arIblocks = [
  */
 $arEmailTypes = [
     [
-        "EVENT_NAME"  => \Bitrix\Main\Config\Option::get(strtolower($arConfCommon["name"]), $arConfCommon["name"].'_EMAIL_TMPL_REGREQUEST'), //"LOCALEXCH1C_REGREQUEST",
+        "EVENT_NAME"  => "LOCALEXCH1C_REGREQUEST",
         "NAME"        => "Запрос на регистрацию",
         "LID"         => "ru",
         "SORT"        => 100,
