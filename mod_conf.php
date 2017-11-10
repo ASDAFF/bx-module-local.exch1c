@@ -27,7 +27,20 @@ $arCstmProps = [
     ['USER', 'UF_OTSROCHKA_DAY', 'string', 'Отсрочка дней'],
     ['USER', 'UF_OTSROCHKA_RUB', 'string', 'Отсрочка рублей'],
     ['USER', 'UF_VITR_ALL', 'string', 'Витрин всего'],
-    ['USER', 'UF_KONT_LITSO_FIO', 'string', 'Контактное лицо'],
+    ['USER', 'UF_KONT_LITSO_ID', 'string', 'Контактное лицо ИД'],
+    ['USER', 'UF_KONT_LITSO_FIO', 'string', 'Контактное лицо ФИО'],
+
+    ['USER', 'UF_REGMAN_ID', 'string', 'Региональный менеджер ИД'],
+    ['USER', 'UF_REGMAN_FIO', 'string', 'Региональный менеджер ФИО'],
+    ['USER', 'UF_REGMAN_PHONE', 'string', 'Региональный менеджер Телефон'],
+    ['USER', 'UF_REGMAN_EMAIL', 'string', 'Региональный менеджер Email'],
+
+    ['USER', 'UF_LOCMAN_ID', 'string', 'Ответственный менеджер ИД'],
+    ['USER', 'UF_LOCMAN_FIO', 'string', 'Ответственный менеджер ФИО'],
+    ['USER', 'UF_LOCMAN_PHONE', 'string', 'Ответственный менеджер Телефон'],
+    ['USER', 'UF_LOCMAN_EMAIL', 'string', 'Ответственный менеджер Email'],
+    ['USER', 'UF_STATUS', 'string', 'Статус'],
+
     // поля пользователя для запроса изменений
     ['USER', 'UF_2_WORK_COMPANY', 'string', 'Служебное Название компании'],
     ['USER', 'UF_2_NAME', 'string', 'Служебное Название магазина'],

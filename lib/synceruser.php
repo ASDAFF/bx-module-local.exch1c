@@ -6,10 +6,19 @@ use Bitrix\Main\Diag\Debug;
 
 class SyncerUser implements ISyncer
 {
+    private $siteId;
+
+    public function __construct()
+    {
+        $rsSites = \CSite::GetList($by="sort", $order="desc", ['ACTIVE' => 'Y']);
+        $arSite = $rsSites->Fetch();
+        $this->siteId = $arSite['ID'];
+    }
 
     private function _create($arUser)
     {
-        Debug::dump($arUser);
+        Debug::dump($arUser['Код']);
+        Debug::dump($arUser['ЭлектроннаяПочта']);
 
         $pass = randString(7);
 
@@ -20,7 +29,7 @@ class SyncerUser implements ISyncer
             'CONFIRM_PASSWORD' => $pass,
             'GROUP_ID' => [USER_GROUP_OPT_ID],
             'ACTIVE' => 'Y',
-            'LID' => SITE_ID,
+            'LID' => $this->siteId,
             'WORK_PROFILE' => $arUser['ВидКонтрагента'],
             'WORK_COMPANY' => $arUser['НаименованиеЮр'],
             'NAME' => $arUser['НаименованиеРабочее'],
@@ -41,19 +50,32 @@ class SyncerUser implements ISyncer
             'UF_OTSROCHKA_DAY' => $arUser['ОтсрочкаДней'],
             'UF_OTSROCHKA_RUB' => $arUser['ОтсрочкаРублей'],
             'UF_VITR_ALL' => $arUser['ВитринВсего'],
+            'UF_STATUS' => $arUser['Статус'],
+
+            'UF_KONT_LITSO_ID' => $arUser['КонтактноеЛицо']['ИД'],
             'UF_KONT_LITSO_FIO' => $arUser['КонтактноеЛицо']['ФИО'],
+
+            'UF_REGMAN_ID' => $arUser['РегиональныйМенеджер']['ИД'],
+            'UF_REGMAN_FIO' => $arUser['РегиональныйМенеджер']['ФИО'],
+            'UF_REGMAN_PHONE' => $arUser['РегиональныйМенеджер']['Телефон'],
+            'UF_REGMAN_EMAIL' => $arUser['РегиональныйМенеджер']['ЭлектроннаяПочта'],
+
+            'UF_LOCMAN_ID' => $arUser['ОтветственныйМенеджер']['ИД'],
+            'UF_LOCMAN_FIO' => $arUser['ОтветственныйМенеджер']['ФИО'],
+            'UF_LOCMAN_PHONE' => $arUser['ОтветственныйМенеджер']['Телефон'],
+            'UF_LOCMAN_EMAIL' => $arUser['ОтветственныйМенеджер']['ЭлектроннаяПочта'],
         ];
 
         //КонтактноеЛицо
-        //РегиональныйМенеджер
-        //ОтветственныйМенеджер
 
         $user = new \CUser();
 
         $userID = $user->Add($arFields);
 
         if (!$userID) {
-            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
+//            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
+            Debug::dump($user->LAST_ERROR);
+            return false;
         }
 
         return [
@@ -77,7 +99,7 @@ class SyncerUser implements ISyncer
             $dbUser = \CUser::GetByLogin($arObj["Код"]);
             $arUser = $dbUser->GetNext();
 
-            Debug::dump($arUser);
+            //Debug::dump($arUser);
 
             if (!$arUser) {
                 // создать
@@ -88,8 +110,8 @@ class SyncerUser implements ISyncer
             }
         }
 
-        // отправить уведомления новым пользователям
-        Debug::dump($arNewUsers);
+        // TODO: отправить уведомления новым пользователям
+        // Debug::dump($arNewUsers);
     }
 
     public function export()

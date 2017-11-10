@@ -31,9 +31,9 @@ $arData = $ftpClient->syncFile();
 $syncer = new SyncerUser();
 $syncer->import($arData);
 
-\Bitrix\Main\Diag\Debug::dump($fileName);
-\Bitrix\Main\Diag\Debug::dump($filePrefix);
-\Bitrix\Main\Diag\Debug::dump($ftp);
-\Bitrix\Main\Diag\Debug::dump($xmlParser->getFileName());
+//\Bitrix\Main\Diag\Debug::dump($fileName);
+//\Bitrix\Main\Diag\Debug::dump($filePrefix);
+//\Bitrix\Main\Diag\Debug::dump($ftp);
+//\Bitrix\Main\Diag\Debug::dump($xmlParser->getFileName());
 //\Bitrix\Main\Diag\Debug::dump($arData);
 ?>
