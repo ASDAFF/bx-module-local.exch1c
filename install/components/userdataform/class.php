@@ -11,6 +11,8 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
     private $_arParams;
 
+    private $_arSections;
+
     /**
      * Проверка наличия модулей требуемых для работы компонента
      * @return bool
@@ -54,14 +56,12 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
         return $arParams;
     }
 
-    private function _regRequest() {
+    private function getUser() {
+        global $USER;
+        return $USER;
+    }
 
-        $valid = true;
-        if(!check_bitrix_sessid()) {
-            $valid = false;
-        }
-
-        $arMsgData = array();
+    private function _setDataForChange() {
 
         $arResult = array(
             'hasError' => true,
@@ -80,47 +80,46 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
             die();
         }
 
+        $valid = true;
+        if(!check_bitrix_sessid()) {
+            $valid = false;
+        }
+
+        $arMsgData = array();
+
+
+        // получим массив допустимых для изменения полей
+        $arFields = $this->getFields();
+        $arFields = $arFields['EDITABLE'];
+
         // проверим наличие данных
-        $arRegData = $this->_request->getPost('REGISTER');
-        $name = htmlspecialcharsEx($arRegData['FIO']);
-        $phone = htmlspecialcharsEx($arRegData['PHONE']);
+        $obData = $this->_request->getPostList();
+        $arFieldTypes = $this->getFields();
+        $arFieldsAll = $arFieldTypes['ALL'];
+        $arFieldsEditable = $arFieldTypes['EDITABLE'];
 
-        $arMsgData = array(
-            'FIO' => $name,
-            'PHONE' => $phone,
-        );
+        $arFieldsForEdit = [];
 
-        if(	   !$valid
-            || !$phone )
+        foreach ($obData as $key => $data) {
+
+            if ( !isset($arFieldsEditable[$key]) ) {
+                continue;
+            }
+
+            $arFieldsForEdit[$arFieldsEditable[$key]['TMP_FIELD']] = $obData[$key];
+
+        }
+
+        $user = new CUser();
+
+        $user->Update(self::_user()->GetID(), $arFieldsForEdit);
+
+        if(	!$valid )
         {
             $arResult['msg'] = "Заполните все поля.";
             echo json_encode($arResult);
             die();
         }
-
-//        $el = new CIBlockElement();
-//
-//        $PROP = [
-//            'FIO' => $name,
-//            'PHONE' => $phone,
-//        ];
-//
-//        $arLoadProductArray = Array(
-//            "IBLOCK_SECTION_ID" => false,      // элемент лежит в корне раздела
-//            "IBLOCK_ID"      => $this->_arParams['IBLOCK_ID'],
-//            "PROPERTY_VALUES"=> $PROP,
-//            "NAME"           => "Заявка на регистрацию",
-//            "ACTIVE"         => "Y",            // активен
-//        );
-//
-//        // создаем элемент
-//        $ITEM_ID = $el->Add($arLoadProductArray);
-//
-//        if (!$ITEM_ID) {
-//            $arResult['msg'] = "Ошибка отправки данных. " . $el->LAST_ERROR;
-//            echo json_encode($arResult);
-//            die();
-//        }
 
         $arResult = array(
             'hasError' => false,
@@ -129,9 +128,9 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
         echo json_encode($arResult);
 
         // шлем почту
-//        $tmplName = \Bitrix\Main\Config\Option::get('local.exch1c', 'LOCAL.EXCH1C_EMAIL_TMPL_REGREQUEST');
-//
-//        CEvent::Send($tmplName, SITE_ID, $arMsgData);
+        $arMsgData = $arFieldsForEdit;
+        $tmplName = \Bitrix\Main\Config\Option::get('local.exch1c', 'LOCALEXCH1C_EDITREQUEST');
+        CEvent::Send($tmplName, SITE_ID, $arMsgData);
 
     }
 
@@ -145,16 +144,49 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
         $this->_request = Application::getInstance()->getContext()->getRequest();
 
-        $this->arResult['USER_SECTIONS'] = [
+        $this->_arSections = [
             [
                 'NAME' => 'Служебная информация',
                 'FIELDS' => [
                     [
-                        'CODE' => 'Фото',
-                        'NAME' => 'Фото',
-                        'TYPE' => 'file',
+                        'CODE' => 'UF_EXPORT_DO',
+                        'NAME' => 'Служебное Требуется передать в 1С',
+                        'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
+                    ],
+                    [
+                        'CODE' => 'UF_IS_NEW',
+                        'NAME' => 'Служебное новый клиент',
+                        'TYPE' => 'text',
+                        'VALUE' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
+                    ],
+                    [
+                        'CODE' => 'UF_NEED_CONFIRM',
+                        'NAME' => 'Служебное ждет подтверждения из 1с',
+                        'TYPE' => 'text',
+                        'VALUE' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
+                    ],
+                    [
+                        'CODE' => 'UF_EDIT_REQUEST_DT',
+                        'NAME' => 'Служебное дата запроса',
+                        'TYPE' => 'text',
+                        'VALUE' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
+                    ],
+                    [
+                        'CODE' => 'UF_EDIT_RESPONS_DT',
+                        'NAME' => 'Служебное дата подтверждения',
+                        'TYPE' => 'text',
+                        'VALUE' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                 ]
             ],
@@ -163,18 +195,28 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                 'NAME' => 'Общая информация',
                 'FIELDS' => [
                     [
+                        'CODE' => 'Фото',
+                        'NAME' => 'Фото',
+                        'TYPE' => 'file',
+                        'VALUE' => '',
+                        'READONLY' => '',
+                        'TMP_FIELD' => '',
+                    ],
+                    [
                         'CODE' => 'LOGIN',
                         'NAME' => 'Код клиента',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'WORK_PROFILE',
                         'NAME' => 'Тип контрагента',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'WORK_COMPANY',
@@ -182,6 +224,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_WORK_COMPANY',
                     ],
                     [
                         'CODE' => 'NAME',
@@ -189,6 +232,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_NAME',
                     ],
                     [
                         'CODE' => 'UF_FIO_DIR',
@@ -196,6 +240,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_FIO_DIR',
                     ],
 
                     [
@@ -204,6 +249,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_UR_ADR',
                     ],
 
                 ]
@@ -218,6 +264,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_PERSONAL_STATE',
                     ],
 //                    [
 //                        'CODE' => '',
@@ -232,6 +279,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_PERSONAL_CITY',
                     ],
 //                    [
 //                        'CODE' => 'КонтактноеЛицоИД',
@@ -246,6 +294,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_KONT_LITSO_FIO',
                     ],
                     [
                         'CODE' => 'PERSONAL_PHONE',
@@ -253,6 +302,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_PERSONAL_PHONE',
                     ],
                     [
                         'CODE' => 'EMAIL',
@@ -260,6 +310,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_EMAIL',
                     ],
                     [
                         'CODE' => 'PERSONAL_STREET',
@@ -267,6 +318,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_PERSONAL_STREET',
                     ],
                     [
                         'CODE' => 'UF_VK_OTHER',
@@ -274,6 +326,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_VK_OTHER',
                     ],
                     [
                         'CODE' => 'UF_INST_OTHER',
@@ -281,6 +334,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_INST_OTHER',
                     ],
                     [
                         'CODE' => 'UF_FB_OTHER',
@@ -288,6 +342,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'TYPE' => 'text',
                         'VALUE' => '',
                         'READONLY' => '',
+                        'TMP_FIELD' => 'UF_2_FB_OTHER',
                     ],
                 ]
             ],
@@ -300,56 +355,64 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'NAME' => 'Основная скидка',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'UF_DISCOUNT_VHD',
                         'NAME' => 'Скидка на входные двери',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'UF_DISCOUNT_MKD',
                         'NAME' => 'Скидка на межкомнатные двери',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'UF_DISCOUNT_POL',
                         'NAME' => 'Скидка на напольные покрытия',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'UF_DISCOUNT_FUR',
                         'NAME' => 'Скидка на фурнитуру',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'UF_OTSROCHKA_DAY',
                         'NAME' => 'Отсрочка дней',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'UF_OTSROCHKA_RUB',
                         'NAME' => 'Отсрочка рублей',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
                     [
                         'CODE' => 'UF_VITR_ALL',
                         'NAME' => 'Витрин всего',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
 //                    [
 //                        'CODE' => 'РегиональныйМенеджерИД',
@@ -363,7 +426,8 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'NAME' => 'Региональный менеджер',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
 //                    [
 //                        'CODE' => 'РегиональныйМенеджерТелефон',
@@ -391,7 +455,8 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                         'NAME' => 'Ответственный менеджер',
                         'TYPE' => 'text',
                         'VALUE' => '',
-                        'READONLY' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
                     ],
 //                    [
 //                        'CODE' => 'ОтветственныйМенеджерТелефон',
@@ -411,13 +476,161 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
             ],
         ];
 
+        $this->fieldsPrepare();
+
         if($this->_request->isPost() && $this->_request['formId'] == 'UserDataForm') {
             $this->_app()->restartBuffer();
             //\Bitrix\Main\Diag\Debug::dump($this->_request['REGISTER']);
-            $this->_regRequest();
+            $this->_setDataForChange();
             die();
         }
 
         $this->includeComponentTemplate();
+    }
+
+    protected function getFields() {
+        $arFieldsAll = [];
+        $arFieldsEditable = [];
+        $arFilterFields = [];
+        $arFilterUFs = [];
+
+        foreach ($this->_arSections as $arSection) {
+
+            foreach ($arSection['FIELDS'] as $arField) {
+
+                $arFieldsAll[$arField['CODE']] = $arField;
+
+                if($arField['READONLY'] !== 'Y') {
+                    $arFieldsEditable[$arField['CODE']] = $arField;
+                }
+
+                if ($arField['TMP_FIELD']) {
+                    $arFieldsAll[$arField['TMP_FIELD']] = [
+                        'CODE' => $arField['TMP_FIELD'],
+                        'NAME' => 'TMP_'.$arField['NAME'],
+                        'TYPE' => 'tmp',
+                        'VALUE' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
+                    ];
+
+                    if (strpos($arField['TMP_FIELD'], 'UF_') === 0) {
+                        $arFilterUFs[$arField['TMP_FIELD']] = [
+                            'CODE' => $arField['TMP_FIELD'],
+                            'NAME' => 'TMP_'.$arField['NAME'],
+                            'TYPE' => 'tmp',
+                            'VALUE' => '',
+                            'READONLY' => 'Y',
+                            'TMP_FIELD' => '',
+                        ];
+                    } else {
+                        $arFilterFields[$arField['TMP_FIELD']] = [
+                            'CODE' => $arField['TMP_FIELD'],
+                            'NAME' => 'TMP_'.$arField['NAME'],
+                            'TYPE' => 'tmp',
+                            'VALUE' => '',
+                            'READONLY' => 'Y',
+                            'TMP_FIELD' => '',
+                        ];
+                    }
+                }
+
+                if (strpos($arField['CODE'], 'UF_') === 0) {
+                    $arFilterUFs[$arField['CODE']] = $arField;
+                } else {
+                    $arFilterFields[$arField['CODE']] = $arField;
+                }
+
+            }
+        }
+
+        return [
+            'ALL' => $arFieldsAll,
+            'EDITABLE' => $arFieldsEditable,
+            'FILTER_FIELDS' => $arFilterFields,
+            'FILTER_UFS' => $arFilterUFs,
+        ];
+    }
+
+    /**
+     * получение данных пользователя по нужным полям
+     */
+    protected function fieldsGetByUser() {
+        // соберем поля для получения данных о пользователе
+        $arFields = $this->getFields();
+        $arFilterFields = array_keys($arFields['FILTER_FIELDS']);
+        $arFilterUFs = array_keys($arFields['FILTER_UFS']);
+
+        $user = $this->getUser();
+
+        $arFilter = [
+            'ID' => $user->GetID(),
+        ];
+        $arParams = [
+            'FIELDS' => $arFilterFields,
+            'SELECT' => $arFilterUFs,
+        ];
+
+        $dbRes = $user::GetList(
+            $by = "timestamp_x",
+            $order = "desc",
+            $arFilter,
+            $arParams);
+
+        $arRes = $dbRes->GetNext();
+
+        return $arRes;
+    }
+
+    /**
+     * Обновление полей на основе данных пользователя
+     */
+    protected function setSectionsData($arUserData) {
+
+        foreach ($this->_arSections as &$arSection) {
+
+            $arFields = $arSection['FIELDS'];
+
+            foreach ($arFields as $key => $arField) {
+
+//                if(!isset($arUserData[$arField['CODE']])) {
+//                    continue;
+//                }
+
+                $arSection['FIELDS'][$arField['CODE']]['VALUE'] = $arUserData[$arField['CODE']];
+
+                if ($arField['TMP_FIELD']) {
+
+                    $arSection['FIELDS'][$arField['TMP_FIELD']] = [
+                        'CODE' => $arField['TMP_FIELD'],
+                        'NAME' => 'TMP_'.$arField['NAME'],
+                        'TYPE' => 'tmp',
+                        'VALUE' => $arUserData[$arField['TMP_FIELD']],
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
+                    ];
+
+                }
+
+            }
+
+            unset($arFields);
+        }
+
+//        \Bitrix\Main\Diag\Debug::dump($this->_arSections);
+//        \Bitrix\Main\Diag\Debug::dump($arUserData);
+
+    }
+
+    /**
+     * Подготовка полей для отображения
+     */
+    protected function fieldsPrepare() {
+        $arUserData = $this->fieldsGetByUser();
+        $this->setSectionsData($arUserData);
+
+        $this->arResult['USER_SECTIONS'] = $this->_arSections;
+
+        //\Bitrix\Main\Diag\Debug::dump($arUserData);
     }
 }

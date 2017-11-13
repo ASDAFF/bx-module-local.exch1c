@@ -17,7 +17,8 @@
                     <input type="<?=$arUserField['TYPE']?>"
                            name="<?=$arUserField['CODE']?>"
                            value="<?=$arUserField['VALUE']?>"
-                           class="input-group__item">
+                           class="input-group__item"
+                           <?=($arUserField['READONLY'] == 'Y') ? 'readonly' : ''?>>
                 </div>
             <? endforeach; ?>
         <? endforeach; ?>

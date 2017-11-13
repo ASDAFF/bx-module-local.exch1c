@@ -117,7 +117,7 @@ $arIblocks = [
 
 /**
  * @var array $arEmailTypes
- * инфоблоки
+ * почтовые события
  */
 $arEmailTypes = [
     [
@@ -129,12 +129,23 @@ $arEmailTypes = [
             #FIO# - ФИО
             #PHONE# - Телефон
         "
-    ]
+    ],
+
+    [
+        "EVENT_NAME"  => "LOCALEXCH1C_EDITREQUEST",
+        "NAME"        => "Запрос на изменение персональных данных",
+        "LID"         => "ru",
+        "SORT"        => 100,
+        "DESCRIPTION" => "
+        #FIO# - ФИО Пользователя
+        #LINK# - Ссылка
+        "
+    ],
 ];
 
 /**
  * @var array $arEmailTypes
- * инфоблоки
+ * почтовые шаблоны
  */
 $arEmailTmpls = [
     [
@@ -148,6 +159,19 @@ $arEmailTmpls = [
         "MESSAGE" => "
 ФИО: #FIO#
 Телефон: #PHONE#
+",
+    ],
+
+    [
+        "ACTIVE" => "Y",
+        "EVENT_NAME" => "LOCALEXCH1C_EDITREQUEST",
+        "EMAIL_FROM" => "#DEFAULT_EMAIL_FROM#",
+        "EMAIL_TO" => "#DEFAULT_EMAIL_FROM#",
+        "BCC" => "",
+        "SUBJECT" => "Запрос на изменение персональных данных с сайта #SITE_NAME#",
+        "BODY_TYPE" => "html",
+        "MESSAGE" => "
+Пользователь <b>#FIO#</b> отправил запрос на изменение информации. Ссылка для просмотра данных: <a href='#LINK#'>#LINK#</a>
 ",
     ],
 ];
