@@ -3,7 +3,7 @@
 
 <div class="page-content">
 
-    <form method="post" name="form1" action="<?= $arResult["FORM_TARGET"] ?>" enctype="multipart/form-data">
+    <form method="post" name="jsSendUserDataForm" action="" enctype="multipart/form-data">
         <input type="hidden" name="formId" value="UserDataForm"/>
         <?=bitrix_sessid_post();?>
 

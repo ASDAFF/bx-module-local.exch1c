@@ -123,7 +123,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
         $arResult = array(
             'hasError' => false,
-            'msg' => $this->arParams["MSG_SUCCESS"],
+            'msg' => str_replace('#EMAIL#', $user->GetEmail(), $this->arParams["MSG_SUCCESS"]),
         );
         echo json_encode($arResult);
 
@@ -558,6 +558,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
     protected function fieldsGetByUser() {
         // соберем поля для получения данных о пользователе
         $arFields = $this->getFields();
+
         $arFilterFields = array_keys($arFields['FILTER_FIELDS']);
         $arFilterUFs = array_keys($arFields['FILTER_UFS']);
 
@@ -587,7 +588,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
      */
     protected function setSectionsData($arUserData) {
 
-        foreach ($this->_arSections as &$arSection) {
+        foreach ($this->_arSections as $key => &$arSection) {
 
             $arFields = $arSection['FIELDS'];
 
@@ -597,7 +598,9 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 //                    continue;
 //                }
 
-                $arSection['FIELDS'][$arField['CODE']]['VALUE'] = $arUserData[$arField['CODE']];
+                $arSection['FIELDS'][$key]['VALUE'] = $arUserData[$arField['CODE']];
+                $arSection['FIELDS'][$arField['CODE']] = $arSection['FIELDS'][$key];
+                unset($arSection['FIELDS'][$key]);
 
                 if ($arField['TMP_FIELD']) {
 
@@ -627,7 +630,10 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
      */
     protected function fieldsPrepare() {
         $arUserData = $this->fieldsGetByUser();
+
         $this->setSectionsData($arUserData);
+
+        //\Bitrix\Main\Diag\Debug::dump($this->_arSections);
 
         $this->arResult['USER_SECTIONS'] = $this->_arSections;
 

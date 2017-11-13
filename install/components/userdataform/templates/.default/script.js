@@ -18,7 +18,7 @@ $(function () {
         $('body').append(template);
     }
 
-    $('[name="jsSendFormRegRequest"]').on('submit', function(e) {
+    $('[name="jsSendUserDataForm"]').on('submit', function(e) {
         e.preventDefault();
 
         var $this = $(this);
