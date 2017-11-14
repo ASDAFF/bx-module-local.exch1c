@@ -13,13 +13,21 @@
 
             <? foreach ($arUserSection['FIELDS'] as $arUserField) : ?>
                 <div class="input-group">
-                    <div class="input-group__name"><?=$arUserField['NAME']?></div>
-                    <input type="<?=$arUserField['TYPE']?>"
-                           name="<?=$arUserField['CODE']?>"
-                           value="<?=$arUserField['VALUE']?>"
-                           class="input-group__item"
-                           <?=($arUserField['READONLY'] == 'Y') ? 'readonly' : ''?>>
+                    <? if ($arUserField['TYPE'] !== 'tmp') :?>
+
+                        <div class="input-group__name"><?=$arUserField['NAME']?></div>
+                        <input type="<?=$arUserField['TYPE']?>"
+                               name="<?=$arUserField['CODE']?>"
+                               value="<?=$arUserField['VALUE']?>"
+                               class="input-group__item"
+                               <?=($arUserField['READONLY'] == 'Y') ? 'readonly' : ''?>>
+
+                    <? elseif($arUserField['VALUE']) :?>
+                        <div class="editreqfild"><span>Запрос на изменение:</span> <?=$arUserField['VALUE']?></div>
+                    <? endif; ?>
+
                 </div>
+
             <? endforeach; ?>
         <? endforeach; ?>
 

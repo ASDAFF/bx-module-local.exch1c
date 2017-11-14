@@ -55,12 +55,15 @@ $arCstmProps = [
     ['USER', 'UF_2_INST_OTHER', 'string', 'Служебное Instagram'],
     ['USER', 'UF_2_FB_OTHER', 'string', 'Служебное Facebook'],
     ['USER', 'UF_2_KONT_LITSO_FIO', 'string', 'Служебное Контактное лицо'],
+
     // флаги для обмена с 1с
     ['USER', 'UF_EXPORT_DO', 'string', 'Служебное Требуется передать в 1С'],
-    ['USER', 'UF_IS_NEW', 'string', 'Служебное новый клиент'],
     ['USER', 'UF_NEED_CONFIRM', 'string', 'Служебное ждет подтверждения из 1с'],
     ['USER', 'UF_EDIT_REQUEST_DT', 'string', 'Служебное дата запроса'],
     ['USER', 'UF_EDIT_RESPONS_DT', 'string', 'Служебное дата подтверждения'],
+
+    // сгенерированный при создании пароль
+    ['USER', 'UF_START_PASS', 'string', 'Служебное Сгенерированный при создании пароль'],
 ];
 
 /**

@@ -64,6 +64,8 @@ class SyncerUser implements ISyncer
             'UF_LOCMAN_FIO' => $arUser['ОтветственныйМенеджер']['ФИО'],
             'UF_LOCMAN_PHONE' => $arUser['ОтветственныйМенеджер']['Телефон'],
             'UF_LOCMAN_EMAIL' => $arUser['ОтветственныйМенеджер']['ЭлектроннаяПочта'],
+
+            'UF_START_PASS' => $pass,
         ];
 
         //КонтактноеЛицо
@@ -111,7 +113,7 @@ class SyncerUser implements ISyncer
         }
 
         // TODO: отправить уведомления новым пользователям
-        // Debug::dump($arNewUsers);
+        Debug::dump($arNewUsers);
     }
 
     public function export()

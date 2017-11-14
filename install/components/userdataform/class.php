@@ -13,6 +13,8 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
     private $_arSections;
 
+    private $_arUserData;
+
     /**
      * Проверка наличия модулей требуемых для работы компонента
      * @return bool
@@ -61,79 +63,6 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
         return $USER;
     }
 
-    private function _setDataForChange() {
-
-        $arResult = array(
-            'hasError' => true,
-            'msg' => "Ошибка отправки сообщения"
-        );
-
-        // проверим, что пришел POST
-        if(!$this->_request->isPost()) {
-            echo json_encode($arResult);
-            die();
-        }
-
-        // подключим модуль инфоблоков
-        if(!CModule::IncludeModule('iblock')) {
-            echo json_encode($arResult);
-            die();
-        }
-
-        $valid = true;
-        if(!check_bitrix_sessid()) {
-            $valid = false;
-        }
-
-        $arMsgData = array();
-
-
-        // получим массив допустимых для изменения полей
-        $arFields = $this->getFields();
-        $arFields = $arFields['EDITABLE'];
-
-        // проверим наличие данных
-        $obData = $this->_request->getPostList();
-        $arFieldTypes = $this->getFields();
-        $arFieldsAll = $arFieldTypes['ALL'];
-        $arFieldsEditable = $arFieldTypes['EDITABLE'];
-
-        $arFieldsForEdit = [];
-
-        foreach ($obData as $key => $data) {
-
-            if ( !isset($arFieldsEditable[$key]) ) {
-                continue;
-            }
-
-            $arFieldsForEdit[$arFieldsEditable[$key]['TMP_FIELD']] = $obData[$key];
-
-        }
-
-        $user = new CUser();
-
-        $user->Update(self::_user()->GetID(), $arFieldsForEdit);
-
-        if(	!$valid )
-        {
-            $arResult['msg'] = "Заполните все поля.";
-            echo json_encode($arResult);
-            die();
-        }
-
-        $arResult = array(
-            'hasError' => false,
-            'msg' => str_replace('#EMAIL#', $user->GetEmail(), $this->arParams["MSG_SUCCESS"]),
-        );
-        echo json_encode($arResult);
-
-        // шлем почту
-        $arMsgData = $arFieldsForEdit;
-        $tmplName = \Bitrix\Main\Config\Option::get('local.exch1c', 'LOCALEXCH1C_EDITREQUEST');
-        CEvent::Send($tmplName, SITE_ID, $arMsgData);
-
-    }
-
     /**
      * Точка входа в компонент
      * Должна содержать только последовательность вызовов вспомогательых ф-ий и минимум логики
@@ -144,338 +73,48 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
         $this->_request = Application::getInstance()->getContext()->getRequest();
 
-        $this->_arSections = [
-            [
-                'NAME' => 'Служебная информация',
-                'FIELDS' => [
-                    [
-                        'CODE' => 'UF_EXPORT_DO',
-                        'NAME' => 'Служебное Требуется передать в 1С',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_IS_NEW',
-                        'NAME' => 'Служебное новый клиент',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_NEED_CONFIRM',
-                        'NAME' => 'Служебное ждет подтверждения из 1с',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_EDIT_REQUEST_DT',
-                        'NAME' => 'Служебное дата запроса',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_EDIT_RESPONS_DT',
-                        'NAME' => 'Служебное дата подтверждения',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                ]
-            ],
-
-            [
-                'NAME' => 'Общая информация',
-                'FIELDS' => [
-                    [
-                        'CODE' => 'Фото',
-                        'NAME' => 'Фото',
-                        'TYPE' => 'file',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'LOGIN',
-                        'NAME' => 'Код клиента',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'WORK_PROFILE',
-                        'NAME' => 'Тип контрагента',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'WORK_COMPANY',
-                        'NAME' => 'Название компании',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_WORK_COMPANY',
-                    ],
-                    [
-                        'CODE' => 'NAME',
-                        'NAME' => 'Название магазина',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_NAME',
-                    ],
-                    [
-                        'CODE' => 'UF_FIO_DIR',
-                        'NAME' => 'ФИО директора',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_FIO_DIR',
-                    ],
-
-                    [
-                        'CODE' => 'UF_UR_ADR',
-                        'NAME' => 'Юридический Адрес',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_UR_ADR',
-                    ],
-
-                ]
-            ],
-
-            [
-                'NAME' => 'Контактная информация',
-                'FIELDS' => [
-                    [
-                        'CODE' => 'PERSONAL_STATE',
-                        'NAME' => 'Край',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_PERSONAL_STATE',
-                    ],
-//                    [
-//                        'CODE' => '',
-//                        'NAME' => 'Район',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-                    [
-                        'CODE' => 'PERSONAL_CITY',
-                        'NAME' => 'Город',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_PERSONAL_CITY',
-                    ],
-//                    [
-//                        'CODE' => 'КонтактноеЛицоИД',
-//                        'NAME' => '',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-                    [
-                        'CODE' => 'UF_KONT_LITSO_FIO',
-                        'NAME' => 'ФИО контактного лица',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_KONT_LITSO_FIO',
-                    ],
-                    [
-                        'CODE' => 'PERSONAL_PHONE',
-                        'NAME' => 'Телефон',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_PERSONAL_PHONE',
-                    ],
-                    [
-                        'CODE' => 'EMAIL',
-                        'NAME' => 'Электронная почта',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_EMAIL',
-                    ],
-                    [
-                        'CODE' => 'PERSONAL_STREET',
-                        'NAME' => 'Адрес доставки',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_PERSONAL_STREET',
-                    ],
-                    [
-                        'CODE' => 'UF_VK_OTHER',
-                        'NAME' => 'Вконтакте',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_VK_OTHER',
-                    ],
-                    [
-                        'CODE' => 'UF_INST_OTHER',
-                        'NAME' => 'Instagram',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_INST_OTHER',
-                    ],
-                    [
-                        'CODE' => 'UF_FB_OTHER',
-                        'NAME' => 'Facebook',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => '',
-                        'TMP_FIELD' => 'UF_2_FB_OTHER',
-                    ],
-                ]
-            ],
-
-            [
-                'NAME' => 'Условия сотрудничества',
-                'FIELDS' => [
-                    [
-                        'CODE' => 'UF_DISCOUNT_COMMON',
-                        'NAME' => 'Основная скидка',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_DISCOUNT_VHD',
-                        'NAME' => 'Скидка на входные двери',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_DISCOUNT_MKD',
-                        'NAME' => 'Скидка на межкомнатные двери',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_DISCOUNT_POL',
-                        'NAME' => 'Скидка на напольные покрытия',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_DISCOUNT_FUR',
-                        'NAME' => 'Скидка на фурнитуру',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_OTSROCHKA_DAY',
-                        'NAME' => 'Отсрочка дней',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_OTSROCHKA_RUB',
-                        'NAME' => 'Отсрочка рублей',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-                    [
-                        'CODE' => 'UF_VITR_ALL',
-                        'NAME' => 'Витрин всего',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-//                    [
-//                        'CODE' => 'РегиональныйМенеджерИД',
-//                        'NAME' => '',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-                    [
-                        'CODE' => 'UF_REGMAN_FIO',
-                        'NAME' => 'Региональный менеджер',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-//                    [
-//                        'CODE' => 'РегиональныйМенеджерТелефон',
-//                        'NAME' => '',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-//                    [
-//                        'CODE' => 'РегиональныйМенеджерЭлектроннаяПочта',
-//                        'NAME' => '',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-//                    [
-//                        'CODE' => 'ОтветственныйМенеджерИД',
-//                        'NAME' => '',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-                    [
-                        'CODE' => 'UF_LOCMAN_FIO',
-                        'NAME' => 'Ответственный менеджер',
-                        'TYPE' => 'text',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ],
-//                    [
-//                        'CODE' => 'ОтветственныйМенеджерТелефон',
-//                        'NAME' => '',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-//                    [
-//                        'CODE' => 'ОтветственныйМенеджерЭлектроннаяПочта',
-//                        'NAME' => '',
-//                        'TYPE' => 'text',
-//                        'VALUE' => '',
-//                        'READONLY' => '',
-//                    ],
-                ]
-            ],
+        $arSystemInfo = [
+            'NAME' => 'Служебная информация',
+            'FIELDS' => [
+                [
+                    'CODE' => 'UF_EXPORT_DO',
+                    'NAME' => 'Служебное Требуется передать в 1С',
+                    'TYPE' => 'text',
+                    'VALUE' => '',
+                    'READONLY' => 'Y',
+                    'TMP_FIELD' => '',
+                ],
+                [
+                    'CODE' => 'UF_NEED_CONFIRM',
+                    'NAME' => 'Служебное ждет подтверждения из 1с',
+                    'TYPE' => 'text',
+                    'VALUE' => '',
+                    'READONLY' => 'Y',
+                    'TMP_FIELD' => '',
+                ],
+                [
+                    'CODE' => 'UF_EDIT_REQUEST_DT',
+                    'NAME' => 'Служебное дата запроса',
+                    'TYPE' => 'text',
+                    'VALUE' => '',
+                    'READONLY' => 'Y',
+                    'TMP_FIELD' => '',
+                ],
+                [
+                    'CODE' => 'UF_EDIT_RESPONS_DT',
+                    'NAME' => 'Служебное дата подтверждения',
+                    'TYPE' => 'text',
+                    'VALUE' => '',
+                    'READONLY' => 'Y',
+                    'TMP_FIELD' => '',
+                ],
+            ]
         ];
 
+        $arTmpSection = $this->_arParams['SECTIONS'];
+        $arTmpSection[] = $arSystemInfo;
+
+        $this->setSections($arTmpSection);
         $this->fieldsPrepare();
 
         if($this->_request->isPost() && $this->_request['formId'] == 'UserDataForm') {
@@ -488,57 +127,68 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
         $this->includeComponentTemplate();
     }
 
-    protected function getFields() {
+    protected function setSections($arTmpSection) {
+
+        $this->_arSections = [];
+
+        foreach ($arTmpSection as $secKey => $arSection) {
+
+            $arFields = [];
+
+            foreach ($arSection['FIELDS'] as $arField) {
+                $arFields[$arField['CODE']] = $arField;
+                $arFields[$arField['CODE']]['SECTION_KEY'] = $secKey;
+
+                $tmpFieldCode = trim($arField['TMP_FIELD']);
+
+                if($tmpFieldCode) {
+                    $arFields[$tmpFieldCode] = [
+                        'CODE' => $tmpFieldCode,
+                        'NAME' => 'TMP_'.$arField['NAME'],
+                        'TYPE' => 'tmp',
+                        'VALUE' => '',
+                        'READONLY' => 'Y',
+                        'TMP_FIELD' => '',
+                        'SECTION_KEY' => $secKey,
+                    ];
+                }
+            }
+
+            $arSection['FIELDS'] = $arFields;
+
+            $this->_arSections[] = $arSection;
+
+            unset($arFields);
+            unset($arSection);
+        }
+
+    }
+
+    protected function getFieldByTypes() {
         $arFieldsAll = [];
+        $arFieldsTmp = [];
         $arFieldsEditable = [];
         $arFilterFields = [];
         $arFilterUFs = [];
 
         foreach ($this->_arSections as $arSection) {
 
-            foreach ($arSection['FIELDS'] as $arField) {
+            foreach ($arSection['FIELDS'] as $key => $arField) {
 
-                $arFieldsAll[$arField['CODE']] = $arField;
+                $arFieldsAll[$key] = $arField;
 
                 if($arField['READONLY'] !== 'Y') {
-                    $arFieldsEditable[$arField['CODE']] = $arField;
+                    $arFieldsEditable[$key] = $arField;
                 }
 
-                if ($arField['TMP_FIELD']) {
-                    $arFieldsAll[$arField['TMP_FIELD']] = [
-                        'CODE' => $arField['TMP_FIELD'],
-                        'NAME' => 'TMP_'.$arField['NAME'],
-                        'TYPE' => 'tmp',
-                        'VALUE' => '',
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ];
-
-                    if (strpos($arField['TMP_FIELD'], 'UF_') === 0) {
-                        $arFilterUFs[$arField['TMP_FIELD']] = [
-                            'CODE' => $arField['TMP_FIELD'],
-                            'NAME' => 'TMP_'.$arField['NAME'],
-                            'TYPE' => 'tmp',
-                            'VALUE' => '',
-                            'READONLY' => 'Y',
-                            'TMP_FIELD' => '',
-                        ];
-                    } else {
-                        $arFilterFields[$arField['TMP_FIELD']] = [
-                            'CODE' => $arField['TMP_FIELD'],
-                            'NAME' => 'TMP_'.$arField['NAME'],
-                            'TYPE' => 'tmp',
-                            'VALUE' => '',
-                            'READONLY' => 'Y',
-                            'TMP_FIELD' => '',
-                        ];
-                    }
+                if ($arField['TYPE'] === 'tmp') {
+                    $arFieldsTmp[$key] = $arField;
                 }
 
                 if (strpos($arField['CODE'], 'UF_') === 0) {
-                    $arFilterUFs[$arField['CODE']] = $arField;
+                    $arFilterUFs[$key] = $arField;
                 } else {
-                    $arFilterFields[$arField['CODE']] = $arField;
+                    $arFilterFields[$key] = $arField;
                 }
 
             }
@@ -547,6 +197,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
         return [
             'ALL' => $arFieldsAll,
             'EDITABLE' => $arFieldsEditable,
+            'TMP' => $arFieldsTmp,
             'FILTER_FIELDS' => $arFilterFields,
             'FILTER_UFS' => $arFilterUFs,
         ];
@@ -557,7 +208,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
      */
     protected function fieldsGetByUser() {
         // соберем поля для получения данных о пользователе
-        $arFields = $this->getFields();
+        $arFields = $this->getFieldByTypes();
 
         $arFilterFields = array_keys($arFields['FILTER_FIELDS']);
         $arFilterUFs = array_keys($arFields['FILTER_UFS']);
@@ -578,65 +229,133 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
             $arFilter,
             $arParams);
 
-        $arRes = $dbRes->GetNext();
-
-        return $arRes;
+        $this->_arUserData = $dbRes->GetNext();
     }
 
     /**
      * Обновление полей на основе данных пользователя
      */
-    protected function setSectionsData($arUserData) {
+    protected function setSectionsData() {
+
+        if (!is_array($this->_arUserData) || count($this->_arUserData) < 1 ) {
+            throw new Exception('Ошибочные данные в $this->_arUserData');
+        }
+
+        if (!is_array($this->_arSections) || count($this->_arSections) < 1 ) {
+            throw new Exception('Ошибочные данные в $this->_arUserData');
+        }
 
         foreach ($this->_arSections as $key => &$arSection) {
 
             $arFields = $arSection['FIELDS'];
 
             foreach ($arFields as $key => $arField) {
-
-//                if(!isset($arUserData[$arField['CODE']])) {
-//                    continue;
-//                }
-
-                $arSection['FIELDS'][$key]['VALUE'] = $arUserData[$arField['CODE']];
-                $arSection['FIELDS'][$arField['CODE']] = $arSection['FIELDS'][$key];
-                unset($arSection['FIELDS'][$key]);
-
-                if ($arField['TMP_FIELD']) {
-
-                    $arSection['FIELDS'][$arField['TMP_FIELD']] = [
-                        'CODE' => $arField['TMP_FIELD'],
-                        'NAME' => 'TMP_'.$arField['NAME'],
-                        'TYPE' => 'tmp',
-                        'VALUE' => $arUserData[$arField['TMP_FIELD']],
-                        'READONLY' => 'Y',
-                        'TMP_FIELD' => '',
-                    ];
-
-                }
-
+                $arSection['FIELDS'][$key]['VALUE'] = $this->_arUserData[$arField['CODE']];
             }
 
             unset($arFields);
         }
-
-//        \Bitrix\Main\Diag\Debug::dump($this->_arSections);
-//        \Bitrix\Main\Diag\Debug::dump($arUserData);
-
     }
 
     /**
      * Подготовка полей для отображения
      */
     protected function fieldsPrepare() {
-        $arUserData = $this->fieldsGetByUser();
 
-        $this->setSectionsData($arUserData);
+        // инициирует $this->_arUserData данными пользователя
+        $this->fieldsGetByUser();
+
+        // наполняет поля данных $this->_arSections данными на основе $this->_arUserData
+        $this->setSectionsData();
 
         //\Bitrix\Main\Diag\Debug::dump($this->_arSections);
 
         $this->arResult['USER_SECTIONS'] = $this->_arSections;
 
         //\Bitrix\Main\Diag\Debug::dump($arUserData);
+    }
+
+    private function _setDataForChange() {
+
+        $arResult = array(
+            'hasError' => true,
+            'msg' => "Ошибка отправки сообщения"
+        );
+
+        // проверим, что пришел POST
+        if(!$this->_request->isPost()) {
+            echo json_encode($arResult);
+            die();
+        }
+
+        // проверим что данные подтверждены в 1С и это не повторная отправка
+        if(	$this->_arUserData['UF_NEED_CONFIRM'] === 'Y' ) {
+            $arResult['msg'] = "Отправленные данные требуют проверки оператора. Повторная отправка до проверки прошлой невозможна.";
+            echo json_encode($arResult);
+            die();
+        }
+
+        $valid = true;
+        if(!check_bitrix_sessid()) {
+            $valid = false;
+        }
+
+        // TODO: валидация полей
+
+        if(	!$valid ) {
+            $arResult['msg'] = "Данные ведены не верно или не все обязательные поля заполнены.";
+            echo json_encode($arResult);
+            die();
+        }
+
+        // получим массив допустимых для изменения полей
+        $arFieldByTypes = $this->getFieldByTypes();
+        $arFieldsEditable = $arFieldByTypes['EDITABLE'];
+
+        // проверим наличие данных
+        $obData = $this->_request->getPostList();
+
+        $arFieldsForEdit = [];
+
+        foreach ($obData as $key => $data) {
+
+            $dataPrep = htmlspecialcharsbx(trim($data));
+
+            if ( !isset($arFieldsEditable[$key])
+                || empty($dataPrep)
+                || $dataPrep === $this->_arSections[$arFieldsEditable[$key]['SECTION_KEY']]["FIELDS"][$key]['VALUE']) {
+                continue;
+            }
+
+            $arFieldsForEdit[$arFieldsEditable[$key]['TMP_FIELD']] = $dataPrep;
+
+        }
+
+        if(	count($arFieldsForEdit) < 1 ) {
+            $arResult['msg'] = "Нет измененных данных.";
+            echo json_encode($arResult);
+            die();
+        }
+
+        $user = new CUser();
+
+        $arFieldsForEdit['UF_EXPORT_DO'] = 'Y';
+        $arFieldsForEdit['UF_NEED_CONFIRM'] = 'Y';
+        $arFieldsForEdit['UF_EDIT_REQUEST_DT'] = (new DateTime())->format('d.m.Y H:i:s');
+        $arFieldsForEdit['UF_EDIT_RESPONS_DT'] = '';
+
+        $user->Update(self::_user()->GetID(), $arFieldsForEdit);
+
+        $arResult = array(
+            'hasError' => false,
+            'msg' => str_replace('#EMAIL#', $user->GetEmail(), $this->arParams["MSG_SUCCESS"]),
+        );
+        echo json_encode($arResult);
+
+        // шлем почту
+        $arMsgData = $arFieldsForEdit;
+        $tmplName = \Bitrix\Main\Config\Option::get('local.exch1c', 'LOCALEXCH1C_EDITREQUEST');
+        CEvent::Send($tmplName, SITE_ID, $arMsgData);
+
     }
 }
