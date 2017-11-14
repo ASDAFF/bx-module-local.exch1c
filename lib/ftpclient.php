@@ -82,16 +82,23 @@ class FtpClient
         $this->_parser = $parser;
     }
 
-    private function _getServerDir() {
+    /**
+     * @return IParser
+     */
+    public function getParser() {
+        return $this->_parser;
+    }
+
+    public function getServerDir() {
         return $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . $this->_dirServer . DIRECTORY_SEPARATOR;
     }
 
     private function _hasServerDir() {
-        return is_dir($this->_getServerDir());
+        return is_dir($this->getServerDir());
     }
 
     private function _createServerDir() {
-        return mkdir($this->_getServerDir(), '755');
+        return mkdir($this->getServerDir(), '755');
     }
 
     public function syncFile() {
@@ -114,11 +121,11 @@ class FtpClient
         }
 
         $filePathRemote = $this->_dirFtp . DIRECTORY_SEPARATOR . $fileName;
-        $filePathLocal = $this->_getServerDir() . $fileName;
+        $filePathLocal = $this->getServerDir() . $fileName;
         $fileFactory->download($filePathRemote, $filePathLocal);
 
         // получение информации из файла
-        $this->_parser->setDir($this->_getServerDir());
+        $this->_parser->setDir($this->getServerDir());
         $arData = $this->_parser->getArray();
 
         return $arData;

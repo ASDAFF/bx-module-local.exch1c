@@ -124,7 +124,13 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
             die();
         }
 
-        $this->includeComponentTemplate();
+        if ($this->getUser()->IsAuthorized()) {
+            $this->includeComponentTemplate();
+        } else {
+            //echo "Авторизуйтесь";
+            LocalRedirect('/');
+        }
+
     }
 
     protected function setSections($arTmpSection) {
@@ -322,8 +328,10 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
             $dataPrep = htmlspecialcharsbx(trim($data));
 
             if ( !isset($arFieldsEditable[$key])
-                || empty($dataPrep)
-                || $dataPrep === $this->_arSections[$arFieldsEditable[$key]['SECTION_KEY']]["FIELDS"][$key]['VALUE']) {
+                // отказ от этих условий из-за необходимости удалять данные, поэтому полностью передаем все служебные поля
+                //|| empty($dataPrep)
+                //|| $dataPrep === $this->_arSections[$arFieldsEditable[$key]['SECTION_KEY']]["FIELDS"][$key]['VALUE']
+            ) {
                 continue;
             }
 

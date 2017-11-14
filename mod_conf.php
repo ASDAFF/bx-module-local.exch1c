@@ -14,6 +14,7 @@ $arConfCommon = [
  */
 $arCstmProps = [
     // кастомные поля пользователя
+    ['USER', 'UF_RAION', 'string', 'Район'],
     ['USER', 'UF_FIO_DIR', 'string', 'ФИО Директора'],
     ['USER', 'UF_UR_ADR', 'string', 'Юридический адрес'],
     ['USER', 'UF_VK_OTHER', 'string', 'Вконтакте'],
@@ -46,6 +47,7 @@ $arCstmProps = [
     ['USER', 'UF_2_NAME', 'string', 'Служебное Название магазина'],
     ['USER', 'UF_2_FIO_DIR', 'string', 'Служебное ФИО Директора'],
     ['USER', 'UF_2_PERSONAL_STATE', 'string', 'Служебное Регион'],
+    ['USER', 'UF_2_RAION', 'string', 'Служебное Район'],
     ['USER', 'UF_2_PERSONAL_CITY', 'string', 'Служебное Город'],
     ['USER', 'UF_2_UR_ADR', 'string', 'Служебное Юридический адрес'],
     ['USER', 'UF_2_PERSONAL_PHONE', 'string', 'Служебное Телефон'],

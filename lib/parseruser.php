@@ -9,17 +9,24 @@ class ParserUser implements IParser
 
     private $_fileDir;
     private $_fileName;
-    private $_filePrefix;
+    private $_filePrefixImport;
+    private $_filePrefixExport;
 
-    public function __construct($fileName, $filePrefix = '')
+    public function __construct($fileName, $filePrefixImport = '', $filePrefixExport = '')
     {
         $this->_fileName = $fileName;
-        $this->_filePrefix = $filePrefix;
+        $this->_filePrefixImport = $filePrefixImport;
+        $this->_filePrefixExport = $filePrefixExport;
     }
 
     public function getFileName()
     {
-        return  $this->_filePrefix . $this->_fileName;
+        return  $this->_filePrefixImport . $this->_fileName;
+    }
+
+    public function getFileNameExport()
+    {
+        return  $this->_filePrefixExport . $this->_fileName;
     }
 
     public function setDir($dir)
@@ -42,7 +49,7 @@ class ParserUser implements IParser
 
     public function getArray()
     {
-        $filePath = $this->_fileDir . $this->_filePrefix . $this->_fileName;
+        $filePath = $this->_fileDir . $this->_filePrefixImport . $this->_fileName;
 
         if(!file_exists($filePath)) {
             throw new \Exception('Не верный путь к файлу ' . $filePath);
@@ -112,5 +119,40 @@ class ParserUser implements IParser
         ];
 
         return $arResult;
+    }
+
+    public function getXml($arData) {
+        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><V8Exch:_1CV8DtUD xmlns:V8Exch="http://www.1c.ru/V8/1CV8DtUD/" xmlns:core="http://v8.1c.ru/data" xmlns:v8="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>');
+        $NS = array(
+            'V8Exch' => 'http://www.1c.ru/V8/1CV8DtUD/',
+            'v8' => 'http://v8.1c.ru/8.1/data/enterprise/current-config',
+            // whatever other namespaces you want
+        );
+
+        // now register them all in the root
+        foreach ($NS as $prefix => $name) {
+            $xml->registerXPathNamespace($prefix, $name);
+        }
+
+        $rootNode = $xml->addChild('V8Exch:Data', null, $NS['V8Exch']);
+        foreach ($arData as $arRow) {
+            $userNode = $rootNode->addChild('v8:CatalogObject.Контрагенты', null, $NS['v8']);
+            $userNode->addChild('v8:Код', $arRow['LOGIN']);
+            $userNode->addChild('v8:НаименованиеЮр', $arRow['UF_2_WORK_COMPANY']);
+            $userNode->addChild('v8:НаименованиеРабочее', $arRow['UF_2_NAME']);
+            $userNode->addChild('v8:ФИОДиректора', $arRow['UF_2_FIO_DIR']);
+            $userNode->addChild('v8:Регион', $arRow['UF_2_PERSONAL_STATE']);
+            $userNode->addChild('v8:Район', $arRow['UF_2_RAION']);
+            $userNode->addChild('v8:Город', $arRow['UF_2_PERSONAL_CITY']);
+            $userNode->addChild('v8:ФИОКонтактноеЛицо', $arRow['UF_2_KONT_LITSO_FIO']);
+            $userNode->addChild('v8:Телефон', $arRow['UF_2_PERSONAL_PHONE']);
+            $userNode->addChild('v8:ЭлектроннаяПочта', $arRow['UF_2_EMAIL']);
+            $userNode->addChild('v8:АдресДоставки', $arRow['UF_2_PERSONAL_STREET']);
+            $userNode->addChild('v8:Вконтакте', $arRow['UF_2_VK_OTHER']);
+            $userNode->addChild('v8:Instagram', $arRow['UF_2_INST_OTHER']);
+            $userNode->addChild('v8:Facebook', $arRow['UF_2_FB_OTHER']);
+        }
+
+        return $xml;
     }
 }
