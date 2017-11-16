@@ -6,4 +6,5 @@ interface ISyncer
 {
     public function import(Array $arData);
     public function export(FtpClient $ftpClient);
+    public function unCheckExported($arData);
 }

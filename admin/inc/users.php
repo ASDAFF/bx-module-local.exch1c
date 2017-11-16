@@ -34,12 +34,26 @@ if ($request->isPost()) {
 
     if ($request->getPost('rqType') === 'userDoImport') {
         $arData = $ftpClient->syncFile();
-        $syncer->import($arData);
+        $arResult = $syncer->import($arData);
+
+        if($arResult) {
+            echo 'Получено записей: ' . $arResult['CNT'] . '<br>';
+            echo 'Создано клиентов: ' . $arResult['CNT_INS'] . '<br>';
+            echo 'Обновлено клиентов: ' . $arResult['CNT_UPD'] . '<br>';
+            echo 'Записей с ошибками: ' . $arResult['CNT_ERROR'] . '<br>';
+            echo '<br><br>';
+        }
     }
 
     if ($request->getPost('rqType') === 'userDoExport') {
-        \Bitrix\Main\Diag\Debug::dump('Do export...');
-        $syncer->export($ftpClient);
+        $arResult = $syncer->export($ftpClient);
+
+        if($arResult) {
+            echo 'Выгружено клиентов: ' . $arResult['CNT'] . '<br><br>';
+        } else {
+            echo 'Нет клиентов для экспорта в 1С или ранее выгруженный файл еще существует на сервере';
+            echo '<br><br>';
+        }
     }
 }
 ?>

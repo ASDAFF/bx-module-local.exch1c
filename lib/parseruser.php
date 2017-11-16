@@ -19,7 +19,7 @@ class ParserUser implements IParser
         $this->_filePrefixExport = $filePrefixExport;
     }
 
-    public function getFileName()
+    public function getFileNameImport()
     {
         return  $this->_filePrefixImport . $this->_fileName;
     }
@@ -121,7 +121,7 @@ class ParserUser implements IParser
         return $arResult;
     }
 
-    public function getXml($arData) {
+    public function makeXml($arData) {
         $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><V8Exch:_1CV8DtUD xmlns:V8Exch="http://www.1c.ru/V8/1CV8DtUD/" xmlns:core="http://v8.1c.ru/data" xmlns:v8="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>');
         $NS = array(
             'V8Exch' => 'http://www.1c.ru/V8/1CV8DtUD/',

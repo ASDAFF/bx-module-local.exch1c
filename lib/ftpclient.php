@@ -63,12 +63,13 @@ class FtpClient
      */
     private $_parser;
 
-    public function __construct($host, $user, $pass, $dirFtp, $dirServer, $port = 21) {
+    public function __construct($host, $user, $pass, $dirFtp, $dirServer, $port = 21)
+    {
         $this->_host = $host;
         $this->_port = $port;
         $this->_user = $user;
         $this->_pass = $pass;
-        $this->_dirFtp = $dirFtp;
+        $this->_dirFtp = trim($dirFtp, DIRECTORY_SEPARATOR);
         $this->_dirServer = trim($dirServer, DIRECTORY_SEPARATOR);
 
         $this->_ftpServer = new FtpServer($this->_host);
@@ -78,40 +79,48 @@ class FtpClient
 
     }
 
-    public function setParser(IParser $parser) {
+    public function setParser(IParser $parser)
+    {
         $this->_parser = $parser;
     }
 
     /**
      * @return IParser
      */
-    public function getParser() {
+    public function getParser()
+    {
         return $this->_parser;
     }
 
-    public function getServerDir() {
+    public function getServerDir()
+    {
         return $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . $this->_dirServer . DIRECTORY_SEPARATOR;
     }
 
-    private function _hasServerDir() {
+    public function getFtpDir()
+    {
+        return $this->_dirFtp . DIRECTORY_SEPARATOR;
+    }
+
+    private function _hasServerDir()
+    {
         return is_dir($this->getServerDir());
     }
 
-    private function _createServerDir() {
+    private function _createServerDir()
+    {
         return mkdir($this->getServerDir(), '755');
     }
 
-    public function syncFile() {
+    public function syncFile()
+    {
         if(!$this->_parser) {
             throw new \Exception('Определите парсер через setParser');
         }
 
-        $fileFactory = FileFactory::build($this->_ftpServer);
-        $arFiles = $fileFactory->ls($this->_dirFtp);
+        $fileName = $this->_parser->getFileNameImport();
 
-        $fileName = $this->_parser->getFileName();
-
-        if (!in_array($fileName, $arFiles)) {
+        if($this->ftpFileExists($fileName)) {
             return false;
         }
 
@@ -122,6 +131,8 @@ class FtpClient
 
         $filePathRemote = $this->_dirFtp . DIRECTORY_SEPARATOR . $fileName;
         $filePathLocal = $this->getServerDir() . $fileName;
+
+        $fileFactory = FileFactory::build($this->_ftpServer);
         $fileFactory->download($filePathRemote, $filePathLocal);
 
         // получение информации из файла
@@ -131,5 +142,32 @@ class FtpClient
         return $arData;
     }
 
+    public function ftpFileExists($fileName)
+    {
+        $fileFactory = FileFactory::build($this->_ftpServer);
+        $arFiles = $fileFactory->ls($this->_dirFtp);
 
+        if (in_array($fileName, $arFiles)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function uploadFile()
+    {
+        $fileName = $this->_parser->getFileNameExport();
+
+        if($this->ftpFileExists($fileName)) {
+            return false;
+        }
+
+        $filePathRemote = $this->_dirFtp . DIRECTORY_SEPARATOR . $fileName;
+        $filePathLocal = $this->getServerDir() . $fileName;
+
+        $fileFactory = FileFactory::build($this->_ftpServer);
+
+        return $fileFactory->upload($filePathLocal, $filePathRemote);
+
+    }
 }

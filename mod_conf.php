@@ -59,6 +59,8 @@ $arCstmProps = [
     ['USER', 'UF_2_KONT_LITSO_FIO', 'string', 'Служебное Контактное лицо'],
 
     // флаги для обмена с 1с
+    ['USER', 'UF_IS_IMPORTED', 'string', 'Служебное Получен из 1С'],
+    ['USER', 'UF_IMPORT_DT', 'string', 'Служебное Дата последнего обновления из 1С'],
     ['USER', 'UF_EXPORT_DO', 'string', 'Служебное Требуется передать в 1С'],
     ['USER', 'UF_NEED_CONFIRM', 'string', 'Служебное ждет подтверждения из 1с'],
     ['USER', 'UF_EDIT_REQUEST_DT', 'string', 'Служебное дата запроса'],

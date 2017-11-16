@@ -19,10 +19,9 @@ class SyncerUser implements ISyncer
 
     private function _create($arUser)
     {
-//        Debug::dump($arUser['Код']);
-//        Debug::dump($arUser['ЭлектроннаяПочта']);
-
         $pass = randString(7);
+
+        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
 
         $arFields = [
             'LOGIN' => $arUser['Код'],
@@ -69,6 +68,8 @@ class SyncerUser implements ISyncer
             'UF_LOCMAN_EMAIL' => $arUser['ОтветственныйМенеджер']['ЭлектроннаяПочта'],
 
             'UF_START_PASS' => $pass,
+            'UF_IS_IMPORTED' => 'Y',
+            'UF_IMPORT_DT' => $expDate,
         ];
 
         //КонтактноеЛицо
@@ -91,59 +92,15 @@ class SyncerUser implements ISyncer
         ];
     }
 
-    public function import(Array $arData)
+    private function _update($arUser)
     {
-        if (!$arData) {
-            throw new \Exception('wrong arData');
-        }
+//        $pass = randString(7);
 
-        $arNewUsers = [];
-
-        foreach ($arData['OBJECTS'] as $arObj) {
-            // получить пользователя по логину
-            $dbUser = \CUser::GetByLogin($arObj["Код"]);
-            $arUser = $dbUser->GetNext();
-
-            //Debug::dump($arUser);
-
-            if (!$arUser) {
-                // создать
-                $arNewUsers[] = $this->_create($arObj);
-            } else {
-                // обновить
-
-            }
-        }
-
-        // Удаляем файл на FTP
-
-        // TODO: отправить уведомления новым пользователям
-        Debug::dump($arNewUsers);
-    }
-
-    public function export(FtpClient $ftpClient)
-    {
-
-        // Проверяем наличие предыдущего файла
-
-        // Собираем всех пользователей для передачи
-        $arData = $this->getDataForExport();
-
-        // Создаем XML код
-        $xml = $ftpClient->getParser()->getXml($arData);
-        Debug::dump($ftpClient->getServerDir());
-
-        $xml->saveXml($ftpClient->getServerDir() . $ftpClient->getParser()->getFileNameExport());
-
-        // Передаем файл на FTP
-    }
-
-    protected function getDataForExport() {
-        /*
-         * 'LOGIN' => $arUser['Код'],
+        $arFields = [
+            'LOGIN' => $arUser['Код'],
             'EMAIL' => $arUser['ЭлектроннаяПочта'],
-            'PASSWORD' => $pass,
-            'CONFIRM_PASSWORD' => $pass,
+//            'PASSWORD' => $pass,
+//            'CONFIRM_PASSWORD' => $pass,
             'GROUP_ID' => [USER_GROUP_REGED_ID, USER_GROUP_OPT_ID],
             'ACTIVE' => 'Y',
             'LID' => $this->siteId,
@@ -182,7 +139,115 @@ class SyncerUser implements ISyncer
             'UF_LOCMAN_FIO' => $arUser['ОтветственныйМенеджер']['ФИО'],
             'UF_LOCMAN_PHONE' => $arUser['ОтветственныйМенеджер']['Телефон'],
             'UF_LOCMAN_EMAIL' => $arUser['ОтветственныйМенеджер']['ЭлектроннаяПочта'],
-         * */
+
+//            'UF_START_PASS' => $pass,
+        ];
+
+        //КонтактноеЛицо
+
+        $user = new \CUser();
+
+        $userID = $user->Update($arUser['ID'], $arFields);
+
+        if (!$userID) {
+//            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
+            Debug::dump($user->LAST_ERROR);
+            return false;
+        }
+
+        return [
+            'ID' => $userID,
+            'LOGIN' => $arFields['LOGIN'],
+            'EMAIL' => $arFields['EMAIL'],
+            'PASSWORD' => $arFields['PASSWORD'],
+        ];
+    }
+
+    public function import(Array $arData)
+    {
+        if (!$arData) {
+            throw new \Exception('wrong arData');
+        }
+
+        $arResult = [
+            'CNT' => 0,
+            'CNT_INS' => 0,
+            'CNT_UPD' => 0,
+            'CNT_ERROR' => 0,
+        ];
+
+        foreach ($arData['OBJECTS'] as $arObj) {
+            $arResult['CNT']++;
+            // получить пользователя по логину
+            $dbUser = \CUser::GetByLogin($arObj["Код"]);
+            $arUser = $dbUser->GetNext();
+
+            //Debug::dump($arUser);
+
+            $arTmpUser = false;
+
+            if (!$arUser) {
+                // создать
+                $arTmpUser = $this->_create($arObj);
+
+                if($arTmpUser) {
+                    $arResult['CNT_INS']++;
+                } else {
+                    $arResult['CNT_ERROR']++;
+                }
+
+            } else {
+                $arObj['ID'] = $arUser['ID'];
+                // обновить
+                $arTmpUser = $this->_update($arObj);
+
+                if($arTmpUser) {
+                    $arResult['CNT_UPD']++;
+                } else {
+                    $arResult['CNT_ERROR']++;
+                }
+            }
+        }
+
+        // Удаляем файл на FTP
+
+        // TODO: отправить уведомления новым пользователям
+
+        return $arResult;
+    }
+
+    public function export(FtpClient $ftpClient)
+    {
+        // Проверяем наличие предыдущего файла
+        if($ftpClient->ftpFileExists($ftpClient->getParser()->getFileNameExport())) {
+            return false;
+        }
+
+        // Собираем всех пользователей для передачи
+        $arData = $this->getDataForExport();
+
+        if(count($arData) <= 0) {
+            return false;
+        }
+
+        // Создаем XML код
+        $xml = $ftpClient->getParser()->makeXml($arData);
+
+        $xml->saveXml($ftpClient->getServerDir() . $ftpClient->getParser()->getFileNameExport());
+
+        // Передаем файл на FTP
+        if ($ftpClient->uploadFile()) {
+            // Сбросим флаг необходимости передачи в 1С
+            $this->unCheckExported($arData);
+        }
+
+        return [
+            'CNT' => count($arData),
+        ];
+    }
+
+    protected function getDataForExport()
+    {
         $arFieldsUF = [
 
             'UF_2_WORK_COMPANY', //'Служебное Название компании'
@@ -237,11 +302,32 @@ class SyncerUser implements ISyncer
 
         $arData = [];
         while ($arRow = $dbRes->GetNext()) {
-//            Debug::dump($arRow);
             $arData[] = $arRow;
         }
 
         return $arData;
+    }
+
+    public function unCheckExported($arData) {
+        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
+
+        foreach ($arData as $arUser) {
+
+            $arFields = [
+                'UF_EXPORT_DO' => 'N',
+                'UF_EDIT_REQUEST_DT' => $expDate,
+            ];
+
+            $user = new \CUser();
+
+            $userID = $user->Update($arUser['ID'], $arFields);
+
+            if (!$userID) {
+//            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
+                Debug::dump($user->LAST_ERROR);
+                return false;
+            }
+        }
     }
 
 }
