@@ -296,7 +296,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
         // проверим что данные подтверждены в 1С и это не повторная отправка
         if(	$this->_arUserData['UF_NEED_CONFIRM'] === 'Y' ) {
-            $arResult['msg'] = "Отправленные данные требуют проверки оператора. Повторная отправка до проверки прошлой невозможна.";
+            $arResult['msg'] = "Спасибо за регистрацию! Наш менеджер обязательно свяжется с Вами для уточнения деталей.";
             echo json_encode($arResult);
             die();
         }

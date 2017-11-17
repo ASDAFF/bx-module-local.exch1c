@@ -5,6 +5,8 @@ namespace Local\Exch1c;
 use Bitrix\Main\Config\Option;
 use Bitrix\Main\Diag\Debug;
 use Bitrix\Main\Loader;
+use Bitrix\Main\Type\Date;
+use Bitrix\Main\Type\DateTime;
 
 class SyncerUser implements ISyncer
 {
@@ -94,7 +96,7 @@ class SyncerUser implements ISyncer
 
     private function _update($arUser)
     {
-//        $pass = randString(7);
+        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
 
         $arFields = [
             'LOGIN' => $arUser['Код'],
@@ -140,6 +142,9 @@ class SyncerUser implements ISyncer
             'UF_LOCMAN_PHONE' => $arUser['ОтветственныйМенеджер']['Телефон'],
             'UF_LOCMAN_EMAIL' => $arUser['ОтветственныйМенеджер']['ЭлектроннаяПочта'],
 
+            'UF_EDIT_RESPONS_DT' => $expDate,
+            'UF_NEED_CONFIRM' => 'N',
+
 //            'UF_START_PASS' => $pass,
         ];
 
@@ -163,11 +168,14 @@ class SyncerUser implements ISyncer
         ];
     }
 
-    public function import(Array $arData)
+    public function import(FtpClient $ftpClient)
     {
-        if (!$arData) {
-            throw new \Exception('wrong arData');
-        }
+        $arResultMsg = [
+            'type' => 'success',
+            'msg' => 'ok',
+        ];
+
+        $arData = $ftpClient->syncFile();
 
         $arResult = [
             'CNT' => 0,
@@ -175,6 +183,12 @@ class SyncerUser implements ISyncer
             'CNT_UPD' => 0,
             'CNT_ERROR' => 0,
         ];
+
+        if (!$arData) {
+            return $arResult;
+        }
+
+        $arNewUsers = [];
 
         foreach ($arData['OBJECTS'] as $arObj) {
             $arResult['CNT']++;
@@ -191,6 +205,7 @@ class SyncerUser implements ISyncer
                 $arTmpUser = $this->_create($arObj);
 
                 if($arTmpUser) {
+                    $arNewUsers[] = $arTmpUser;
                     $arResult['CNT_INS']++;
                 } else {
                     $arResult['CNT_ERROR']++;
@@ -210,14 +225,34 @@ class SyncerUser implements ISyncer
         }
 
         // Удаляем файл на FTP
+        $ftpClient->rmFtpImportFile();
 
-        // TODO: отправить уведомления новым пользователям
+        // отправить уведомления новым пользователям
+        $this->sendEmailForNewUsers($arNewUsers);
+
+        // лог
+        $arResultMsg['msg'] = 'Всего записей: ' . $arResult['CNT']
+            . '; создано: ' . $arResult['CNT_INS']
+            . '; обновлено: ' . $arResult['CNT_UPD']
+            . '; с ошибками: ' . $arResult['CNT_ERROR'] . ';';
+
+        Tables\SyncHistoryTable::add([
+            'name' => 'user',
+            'operation' => 'import',
+            'result' => $arResultMsg['type'],
+            'msg' => $arResultMsg['msg'],
+        ]);
 
         return $arResult;
     }
 
     public function export(FtpClient $ftpClient)
     {
+        $arResultMsg = [
+            'type' => 'success',
+            'msg' => 'ok',
+        ];
+
         // Проверяем наличие предыдущего файла
         if($ftpClient->ftpFileExists($ftpClient->getParser()->getFileNameExport())) {
             return false;
@@ -239,7 +274,22 @@ class SyncerUser implements ISyncer
         if ($ftpClient->uploadFile()) {
             // Сбросим флаг необходимости передачи в 1С
             $this->unCheckExported($arData);
+        } else {
+            $arResultMsg = [
+                'type' => 'error',
+                'msg' => 'ftp upload error',
+            ];
         }
+
+        // лог
+        $arResultMsg['msg'] = 'Передано записей: ' . count($arData);
+
+        Tables\SyncHistoryTable::add([
+            'name' => 'user',
+            'operation' => 'export',
+            'result' => $arResultMsg['type'],
+            'msg' => $arResultMsg['msg'],
+        ]);
 
         return [
             'CNT' => count($arData),
@@ -327,6 +377,18 @@ class SyncerUser implements ISyncer
                 Debug::dump($user->LAST_ERROR);
                 return false;
             }
+        }
+    }
+
+    protected function sendEmailForNewUsers($arUsers) {
+
+        $arModConf = include __DIR__ . '/../mod_conf.php';
+
+        foreach ($arUsers as $arUser) {
+//            Debug::dump($arUser);
+
+            $tmplName = \Bitrix\Main\Config\Option::get(strtolower($arModConf['name']), $arModConf['name'].'_EMAIL_TMPL_REGCONFIRM');
+            \CEvent::Send($tmplName, SITE_ID, $arUser);
         }
     }
 

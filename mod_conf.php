@@ -60,7 +60,7 @@ $arCstmProps = [
 
     // флаги для обмена с 1с
     ['USER', 'UF_IS_IMPORTED', 'string', 'Служебное Получен из 1С'],
-    ['USER', 'UF_IMPORT_DT', 'string', 'Служебное Дата последнего обновления из 1С'],
+    //['USER', 'UF_IMPORT_DT', 'string', 'Служебное Дата последнего обновления из 1С'],
     ['USER', 'UF_EXPORT_DO', 'string', 'Служебное Требуется передать в 1С'],
     ['USER', 'UF_NEED_CONFIRM', 'string', 'Служебное ждет подтверждения из 1с'],
     ['USER', 'UF_EDIT_REQUEST_DT', 'string', 'Служебное дата запроса'],
@@ -85,7 +85,7 @@ $arTables = [
  * элемент массива - ["имя класса таблицы", "имя поля таблицы"]
  */
 $arIndexes = [
-    ['SyncHistory', 'dtsync'],
+    ['SyncHistory', 'dt'],
 ];
 
 /**
@@ -128,13 +128,24 @@ $arIblocks = [
  */
 $arEmailTypes = [
     [
+        "EVENT_NAME"  => "LOCALEXCH1C_REGCONFIRM",
+        "NAME"        => "Подтверждение регистрации",
+        "LID"         => "ru",
+        "SORT"        => 100,
+        "DESCRIPTION" => "
+#LOGIN# - Логин
+#PASSWORD# - Пароль
+        "
+    ],
+
+    [
         "EVENT_NAME"  => "LOCALEXCH1C_REGREQUEST",
         "NAME"        => "Запрос на регистрацию",
         "LID"         => "ru",
         "SORT"        => 100,
         "DESCRIPTION" => "
-            #FIO# - ФИО
-            #PHONE# - Телефон
+#FIO# - ФИО
+#PHONE# - Телефон
         "
     ],
 
@@ -144,8 +155,8 @@ $arEmailTypes = [
         "LID"         => "ru",
         "SORT"        => 100,
         "DESCRIPTION" => "
-        #FIO# - ФИО Пользователя
-        #LINK# - Ссылка
+#FIO# - ФИО Пользователя
+#LINK# - Ссылка
         "
     ],
 ];
@@ -155,6 +166,24 @@ $arEmailTypes = [
  * почтовые шаблоны
  */
 $arEmailTmpls = [
+    [
+        "ACTIVE" => "Y",
+        "EVENT_NAME" => "LOCALEXCH1C_REGCONFIRM",
+        "EMAIL_FROM" => "#DEFAULT_EMAIL_FROM#",
+        "EMAIL_TO" => "#EMAIL#",
+        "BCC" => "",
+        "SUBJECT" => "Подтверждение регистрации на сайте #SITE_NAME#",
+        "BODY_TYPE" => "html",
+        "MESSAGE" => "
+Добрый день.<br><br>
+Ваши данные усешно прошли проверку на сайте \"#SITE_NAME#\".<br><br>
+
+Для входа на сайт используйте данные:<br><br>
+Логин: #LOGIN#<br>
+Пароль: #PASSWORD#
+",
+    ],
+
     [
         "ACTIVE" => "Y",
         "EVENT_NAME" => "LOCALEXCH1C_REGREQUEST",

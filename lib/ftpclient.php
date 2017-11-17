@@ -120,7 +120,7 @@ class FtpClient
 
         $fileName = $this->_parser->getFileNameImport();
 
-        if($this->ftpFileExists($fileName)) {
+        if(!$this->ftpFileExists($fileName)) {
             return false;
         }
 
@@ -169,5 +169,19 @@ class FtpClient
 
         return $fileFactory->upload($filePathLocal, $filePathRemote);
 
+    }
+
+    public function rmFtpImportFile() {
+        $fileName = $this->_parser->getFileNameimport();
+
+        if(!$this->ftpFileExists($fileName)) {
+            return false;
+        }
+
+        $filePathRemote = $this->_dirFtp . DIRECTORY_SEPARATOR . $fileName;
+
+        $fileFactory = FileFactory::build($this->_ftpServer);
+
+        return $fileFactory->rm($filePathRemote);
     }
 }

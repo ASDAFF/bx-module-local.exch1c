@@ -22,19 +22,30 @@ class SyncHistoryTable extends Entity\DataManager
                 'autocomplete' => true
             ]),
 
+            // dt
+            new Entity\DatetimeField('dt', [
+                'required' => true,
+                'default_value' => new Type\DateTime(),
+            ]),
+
             // name
             new Entity\StringField('name', [
                 'required' => true
             ]),
 
-            // dtstart
-            new Entity\DatetimeField('dtstart', [
+            // operation
+            new Entity\StringField('operation', [
                 'required' => true
             ]),
 
-            // dtsync
-            new Entity\DatetimeField('dtsync', [
-                'required' => true
+            // result
+            new Entity\StringField('result', [
+                'required' => false
+            ]),
+
+            // msg
+            new Entity\StringField('msg', [
+                'required' => false
             ]),
         ];
     }
