@@ -50,7 +50,7 @@ try {
 
     $syncer = new SyncerUser();
 
-    $arResult = $syncer->import($ftpClient);
+    $arResult = $syncer->export($ftpClient);
 
 } catch (Exception $e) {
     echo 'произошла ошибка: ' . $e->getMessage();
