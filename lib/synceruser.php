@@ -383,12 +383,8 @@ class SyncerUser implements ISyncer
     protected function sendEmailForNewUsers($arUsers) {
 
         $arModConf = include __DIR__ . '/../mod_conf.php';
-        Debug::dump(__DIR__ . '/../mod_conf.php');
-        Debug::dump($arModConf);
 
         foreach ($arUsers as $arUser) {
-//            Debug::dump($arUser);
-
             $tmplName = \Bitrix\Main\Config\Option::get(strtolower($arModConf['name']), $arModConf['name'].'_EMAIL_TMPL_REGCONFIRM');
             \CEvent::Send($tmplName, $this->siteId, $arUser);
         }
