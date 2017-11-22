@@ -8,6 +8,7 @@ use Bitrix\Main\Entity\Base;
 use Bitrix\Main\Config\Option;
 use Bitrix\Main\IO\Directory;
 use Bitrix\Main\IO\File;
+use Bitrix\Sale\Internals\OrderPropsTable;
 
 Loc::loadMessages(__FILE__);
 
@@ -63,9 +64,16 @@ class local_exch1c extends CModule
 
     private $arEmailTmpls = [];
 
+    private $arSalePersonTypes = [];
+
+    private $arSaleOrderPropsGroups = [];
+
+    private $arSaleOrderProps = [];
+
     private $siteId;
 
-    public function __construct(){
+    public function __construct()
+    {
 
         $arModuleVersion = [];
         include __DIR__.'/version.php';
@@ -108,6 +116,18 @@ class local_exch1c extends CModule
             $this->arEmailTmpls = $this->arModConf['arEmailTmpls'];
         }
 
+        if ($this->arModConf['arSalePersonTypes']) {
+            $this->arSalePersonTypes = $this->arModConf['arSalePersonTypes'];
+        }
+
+        if ($this->arModConf['arSaleOrderPropsGroups']) {
+            $this->arSaleOrderPropsGroups = $this->arModConf['arSaleOrderPropsGroups'];
+        }
+
+        if ($this->arModConf['arSaleOrderProps']) {
+            $this->arSaleOrderProps = $this->arModConf['arSaleOrderProps'];
+        }
+
         if (is_array($arModuleVersion) && array_key_exists('VERSION', $arModuleVersion)) {
             $this->MODULE_VERSION = $arModuleVersion['VERSION'];
             $this->MODULE_VERSION_DATE = $arModuleVersion['VERSION_DATE'];
@@ -141,7 +161,8 @@ class local_exch1c extends CModule
      * @param bool $notDocumentRoot
      * @return mixed|string
      */
-    protected function getPath($notDocumentRoot = false) {
+    protected function getPath($notDocumentRoot = false)
+    {
         return  ($notDocumentRoot)
             ? preg_replace('#^(.*)\/(local|bitrix)\/modules#','/$2/modules',dirname(__DIR__))
             : dirname(__DIR__);
@@ -151,7 +172,8 @@ class local_exch1c extends CModule
      * Получение кода партнера из ID модуля
      * @return string
      */
-    protected function getPartnerCodeByModuleID() {
+    protected function getPartnerCodeByModuleID()
+    {
         $delimeterPos = strpos($this->MODULE_ID, '.');
         $pCode = substr($this->MODULE_ID, 0, $delimeterPos);
 
@@ -166,7 +188,8 @@ class local_exch1c extends CModule
      * Получение кода модуля из ID модуля
      * @return string
      */
-    protected function getModuleCodeByModuleID() {
+    protected function getModuleCodeByModuleID()
+    {
         $delimeterPos = strpos($this->MODULE_ID, '.') + 1;
         $mCode = substr($this->MODULE_ID, $delimeterPos);
 
@@ -180,7 +203,8 @@ class local_exch1c extends CModule
     /**
      * @return bool|CDatabase
      */
-    private function getDB() {
+    private function getDB()
+    {
         global $DB;
 
         return $DB;
@@ -191,14 +215,16 @@ class local_exch1c extends CModule
      *
      * @return bool
      */
-    protected function isVersionD7() {
+    protected function isVersionD7()
+    {
         return CheckVersion(ModuleManager::getVersion('main'), '14.00.00');
     }
 
     /**
      * Установка модуля
      */
-    public function DoInstall() {
+    public function DoInstall()
+    {
         global $APPLICATION;
 
         if ($this->isVersionD7()) {
@@ -210,6 +236,9 @@ class local_exch1c extends CModule
                 $this->InstallDB();
                 $this->InstallIblocks();
                 $this->InstallProps();
+                $this->InstallSalePersonTypes();
+                $this->InstallSaleOrderPropsGroups();
+                $this->InstallSaleOrderProps();
                 $this->InstallEmails();
                 $this->InstallEvents();
                 $this->InstallFiles();
@@ -231,7 +260,8 @@ class local_exch1c extends CModule
     /**
      * Удаление модуля
      */
-    public function DoUnInstall() {
+    public function DoUnInstall()
+    {
         global $APPLICATION;
 
         $context = Application::getInstance()->getContext();
@@ -253,6 +283,12 @@ class local_exch1c extends CModule
                 $this->UnInstallProps();
             }
 
+            if($request->get('savesaleprops') != 'Y') {
+                $this->UnInstallSalePersonTypes();
+                $this->UnInstallSaleOrderPropsGroups();
+                $this->UnInstallSaleOrderProps();
+            }
+
             if($request->get('saveiblocks') != 'Y') {
                 $this->UnInstallIblocks();
                 $this->UnInstallEmails();
@@ -272,7 +308,8 @@ class local_exch1c extends CModule
      * @param null $connection
      * @return bool
      */
-    static public function isIdxExists($tblName, $idxName, $connection = null) {
+    static public function isIdxExists($tblName, $idxName, $connection = null)
+    {
         if (!$connection) {
             $connection = Application::getConnection();
         }
@@ -299,7 +336,8 @@ class local_exch1c extends CModule
     /**
      * Работа с базой данных при установке модуля
      */
-    public function InstallDB() {
+    public function InstallDB()
+    {
 
         Loader::includeModule($this->MODULE_ID);
 
@@ -338,7 +376,8 @@ class local_exch1c extends CModule
     /**
      * Работа с базой данных при удалении модуля
      */
-    public function UnInstallDB() {
+    public function UnInstallDB()
+    {
 
         Loader::includeModule($this->MODULE_ID);
 
@@ -377,7 +416,8 @@ class local_exch1c extends CModule
     /**
      * Работа с файлами при установке модуля
      */
-    public function InstallFiles() {
+    public function InstallFiles()
+    {
         // Копируем компоненты в папки ядра, переименовывая их по шаблону КОД_МОДУЛЯ.ИМЯ_КОМПОНЕНТА
         if (Directory::isDirectoryExists($path = $this->GetPath() . '/install/components')) {
             if ($dir = opendir($path)) {
@@ -422,7 +462,8 @@ class local_exch1c extends CModule
      * Работа с файлами при удалении модуля
      * @return bool
      */
-    public function UnInstallFiles() {
+    public function UnInstallFiles()
+    {
 
         // Удалим файлы компонентов модуля, основываясь на принцепе их именования по шаблону КОД_МОДУЛЯ.ИМЯ_КОМПОНЕНТА
         if($this->PARTNER_CODE && $this->MODULE_CODE) {
@@ -470,7 +511,8 @@ class local_exch1c extends CModule
      * Работа с событиями при установке модуля
      * @return bool
      */
-    public function InstallEvents() {
+    public function InstallEvents()
+    {
         return true;
     }
 
@@ -478,7 +520,8 @@ class local_exch1c extends CModule
      * Работа с событиями при удалении модуля
      * @return bool
      */
-    public function UnInstallEvents() {
+    public function UnInstallEvents()
+    {
         return true;
     }
 
@@ -486,7 +529,8 @@ class local_exch1c extends CModule
      * Работа со списками задач при установке модуля
      * @return bool
      */
-    public function InstallTasks() {
+    public function InstallTasks()
+    {
         return true;
     }
 
@@ -494,7 +538,8 @@ class local_exch1c extends CModule
      * Работа со списками задач при удалении модуля
      * @return bool
      */
-    public function UnInstallTasks() {
+    public function UnInstallTasks()
+    {
         return true;
     }
 
@@ -502,7 +547,8 @@ class local_exch1c extends CModule
      * Работа с полями инфоблоков и сущностей
      * @return bool
      */
-    public function InstallProps() {
+    public function InstallProps()
+    {
 
         // получим список пользовательских полей
         $arSort = ['ENTITY_ID' => 'ASC'];
@@ -618,7 +664,8 @@ class local_exch1c extends CModule
      * @return bool
      * @throws Exception
      */
-    public function InstallIblocks() {
+    public function InstallIblocks()
+    {
         $db = $this->getDB();
 
         // создаем типы инфоблоков
@@ -718,7 +765,8 @@ class local_exch1c extends CModule
      * Удаление инфоблоков
      * @return bool
      */
-    public function UnInstallIblocks() {
+    public function UnInstallIblocks()
+    {
         $db = $this->getDB();
 
         // удаляем инфоблоки
@@ -771,8 +819,8 @@ class local_exch1c extends CModule
      * Создание почтовых событий и шаблонов
      * @return bool
      */
-    public function InstallEmails() {
-
+    public function InstallEmails()
+    {
         // Создаем почтовые события
         $obEventType = new CEventType();
         foreach ($this->arEmailTypes as $arEmailType) {
@@ -805,8 +853,8 @@ class local_exch1c extends CModule
      * Удаление почтовых событий и шаблонов
      * @return bool
      */
-    public function UnInstallEmails() {
-
+    public function UnInstallEmails()
+    {
         // Удаляем почтовые шаблоны
         $obTemplate = new CEventMessage();
         foreach ($this->arEmailTmpls as $arEmailTmpl) {
@@ -829,6 +877,294 @@ class local_exch1c extends CModule
         }
         unset($obEventType);
 
+
+        return true;
+    }
+
+    /**
+     * Создание типы плательщиков
+     * @return bool
+     */
+    public function InstallSalePersonTypes()
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        foreach ($this->arSalePersonTypes as $arPersTypeFields) {
+            $arPersTypeFields['ACTIVE'] = 'Y';
+            $arPersTypeFields['SORT'] = 100;
+            $arPersTypeFields['LID'] = $this->siteId;
+
+            $arOrder = [];
+            $arFilter = ['ACTIVE' => 'Y', 'NAME' => $arPersTypeFields['NAME']];
+            $arSelect = ['ID', 'NAME'];
+
+            $dbPersTypes = CSalePersonType::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+            $arPersType = $dbPersTypes->GetNext();
+
+            if ($arPersType) {
+                $persTypeID = $arPersType['ID'];
+            } else {
+                $persTypeID = (new CSalePersonType())->Add($arPersTypeFields);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Удаление типы плательщиков
+     * @return bool
+     */
+    public function UnInstallSalePersonTypes()
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        foreach ($this->arSalePersonTypes as $arPersTypeFields) {
+            $arOrder = [];
+            $arFilter = ['ACTIVE' => 'Y', 'NAME' => $arPersTypeFields['NAME']];
+            $arSelect = ['ID', 'NAME'];
+
+            $dbPersTypes = CSalePersonType::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+            while ($arPersType = $dbPersTypes->GetNext()) {
+                (new CSalePersonType())->Delete($arPersType['ID']);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Создание группы свойств заказа
+     * @return bool
+     */
+    public function InstallSaleOrderPropsGroups()
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        $arPTs = $this->getPersonTypesArray();
+        $arOPGs = $this->getSaleOrderPropsGroupsArray();
+
+        foreach ($this->arSaleOrderPropsGroups as $arPropGroupFields) {
+
+            if(isset($arOPGs[$arPropGroupFields['NAME']]) || !isset($arPTs[$arPropGroupFields['PERSON_TYPE_NAME']])) {
+                continue;
+            }
+
+            $arPropGroupFields["PERSON_TYPE_ID"] = $arPTs[$arPropGroupFields['PERSON_TYPE_NAME']]["ID"];
+            $propGroupID = (new CSaleOrderPropsGroup())->Add($arPropGroupFields);
+        }
+
+        return true;
+    }
+
+    /**
+     * Удаление группы свойств заказа
+     * @return bool
+     */
+    public function UnInstallSaleOrderPropsGroups()
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        $arOPGs = $this->getSaleOrderPropsGroupsArray();
+
+        foreach ($this->arSaleOrderPropsGroups as $arPropGroupFields) {
+
+            if(!isset($arOPGs[$arPropGroupFields['NAME']])) {
+                continue;
+            }
+
+            (new CSaleOrderPropsGroup())->Delete($arOPGs[$arPropGroupFields['NAME']]['ID']);
+        }
+
+        return true;
+    }
+
+    public function getPersonTypesArray($arOrder = [], $arFilter = [], $arSelect = ['ID', 'NAME'])
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        $dbPTs = CSalePersonType::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+        $arPTs = [];
+        while ($arPersType = $dbPTs->GetNext()) {
+            $arPTs[$arPersType['NAME']] = $arPersType;
+        }
+
+        return $arPTs;
+    }
+
+    public function getSaleOrderPropsGroupsArray($arOrder = [], $arFilter = [], $arSelect = ['ID', 'NAME'])
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        $dbOPGs = CSaleOrderPropsGroup::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+        $arOPGs = [];
+        while ($arOrderPropsGroup = $dbOPGs->GetNext()) {
+            $arOPGs[$arOrderPropsGroup['NAME']] = $arOrderPropsGroup;
+        }
+
+        return $arOPGs;
+    }
+
+    /**
+     * Создание свойства заказа
+     * @return bool
+     */
+    public function InstallSaleOrderProps()
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        // получим список всех типов плательщиков
+        $arPTs = $this->getPersonTypesArray();
+
+        // получим список всех групп заказа
+        $arOPGs = $this->getSaleOrderPropsGroupsArray();
+
+        $arOrderPropDefaults = [
+            "REQUIRED" => "N",
+            "DEFAULT_VALUE" => "N",
+            "SORT" => 100,
+
+            "USER_PROPS" => "N",
+            "IS_LOCATION" => "N",
+            "IS_LOCATION4TAX" => "N",
+            "IS_EMAIL" => "N",
+            "IS_PROFILE_NAME" => "N",
+            "IS_PAYER" => "N",
+            "IS_FILTERED" => "N",
+            "IS_ZIP" => "N",
+            "IS_PHONE" => "N",
+            "IS_ADDRESS" => "N",
+            "DESCRIPTION" => "",
+            "MULTIPLE" => "N",
+            "UTIL" => "N",
+        ];
+
+        $arFilter = [
+            'LOGIC' => 'OR',
+        ];
+
+        $arSelect = ['ID', 'CODE', 'NAME', 'TYPE'];
+
+        foreach ($this->arSaleOrderProps as $key => $arOrderProp) {
+            if(!isset($arPTs[$arOrderProp["PERSON_TYPE_NAME"]]) || !isset($arOPGs[$arOrderProp["PROPS_GROUP_NAME"]])) {
+                continue;
+            }
+            $this->arSaleOrderProps[$key]["PERSON_TYPE_ID"] = $arPTs[$arOrderProp["PERSON_TYPE_NAME"]]["ID"];
+            $this->arSaleOrderProps[$key]["PROPS_GROUP_ID"] = $arOPGs[$arOrderProp["PROPS_GROUP_NAME"]]["ID"];
+
+            unset($this->arSaleOrderProps[$key]["PERSON_TYPE_NAME"]);
+            unset($this->arSaleOrderProps[$key]["PROPS_GROUP_NAME"]);
+
+            $this->arSaleOrderProps[$key] = array_merge($arOrderPropDefaults, $this->arSaleOrderProps[$key]);
+
+            // собираем фильтр для определения наличия свойств
+            $arFilter[] = [
+                'PERSON_TYPE_ID' => $this->arSaleOrderProps[$key]["PERSON_TYPE_ID"],
+                'TYPE' => $arOrderProp["TYPE"],
+                'CODE' => $arOrderProp["CODE"],
+            ];
+        }
+
+        $dbSOPs = OrderPropsTable::getList([
+            'select' => $arSelect,
+            'filter' => $arFilter,
+        ]);
+
+        $arSOPs = [];
+        while ($arSOP = $dbSOPs->fetch()) {
+            $arSOPs[$arSOP['CODE']] = $arSOP;
+        }
+
+        foreach ($this->arSaleOrderProps as $arOrderProp) {
+
+            if(isset($arSOPs[$arOrderProp['CODE']])) {
+                continue;
+            }
+
+            $res = OrderPropsTable::add($arOrderProp);
+
+            if(!$res->isSuccess()) {
+                echo $res->getErrorMessages();
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Удаление свойства заказа
+     * @return bool
+     */
+    public function UnInstallSaleOrderProps()
+    {
+        if( !Loader::includeModule('sale') ) {
+            return true;
+        }
+
+        // получим список всех типов плательщиков
+        $arPTs = $this->getPersonTypesArray();
+
+        // получим список всех групп заказа
+        $arOPGs = $this->getSaleOrderPropsGroupsArray();
+
+        $arFilter = [
+            'LOGIC' => 'OR',
+        ];
+
+        $arSelect = ['ID', 'CODE', 'NAME', 'TYPE'];
+
+        foreach ($this->arSaleOrderProps as $key => $arOrderProp) {
+            if(!isset($arPTs[$arOrderProp["PERSON_TYPE_NAME"]]) || !isset($arOPGs[$arOrderProp["PROPS_GROUP_NAME"]])) {
+                continue;
+            }
+            $this->arSaleOrderProps[$key]["PERSON_TYPE_ID"] = $arPTs[$arOrderProp["PERSON_TYPE_NAME"]]["ID"];
+            $this->arSaleOrderProps[$key]["PROPS_GROUP_ID"] = $arOPGs[$arOrderProp["PROPS_GROUP_NAME"]]["ID"];
+
+            // собираем фильтр для определения наличия свойств
+            $arFilter[] = [
+                'PERSON_TYPE_ID' => $this->arSaleOrderProps[$key]["PERSON_TYPE_ID"],
+                'TYPE' => $arOrderProp["TYPE"],
+                'CODE' => $arOrderProp["CODE"],
+            ];
+        }
+
+        $dbSOPs = OrderPropsTable::getList([
+            'select' => $arSelect,
+            'filter' => $arFilter,
+        ]);
+
+        $arSOPs = [];
+        while ($arSOP = $dbSOPs->fetch()) {
+            $arSOPs[$arSOP['CODE']] = $arSOP;
+        }
+
+        foreach ($this->arSaleOrderProps as $arOrderProp) {
+
+            if(!isset($arSOPs[$arOrderProp['CODE']])) {
+                continue;
+            }
+
+            OrderPropsTable::delete($arSOPs[$arOrderProp['CODE']]['ID']);
+
+        }
 
         return true;
     }
