@@ -298,6 +298,24 @@ $arSaleOrderProps = [
         "TYPE" => "TEXT",
         "CODE" => "EDIT_RESPONS_DT",
     ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Физическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное статус заказа",
+        "TYPE" => "TEXT",
+        "CODE" => "EXT_STATUS",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Физическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное xml_id клиента",
+        "TYPE" => "TEXT",
+        "CODE" => "USER_XML",
+    ],
+
+
 ];
 
 $arConfig = array_merge($arConfCommon, [

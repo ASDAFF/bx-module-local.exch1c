@@ -22,9 +22,7 @@ if(!Loader::includeModule($module_id))
     ShowError('Ошибка подключения модуля');
     require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/epilog_admin.php");
 }
-?>
 
-<?
 $aTabs = [];
 $aTabs[] = array("DIV" => $module_id."_users", "TAB" => 'Обмен контрагентами', "TITLE" => 'Тестирование обмена контрагентами', 'INC' => 'users.php');
 $aTabs[] = array("DIV" => $module_id."_stores", "TAB" => 'Обмен остатками', "TITLE" => 'Тестирование обмена остатками', 'INC' => 'stores.php');

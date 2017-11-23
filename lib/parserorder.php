@@ -136,21 +136,29 @@ class ParserOrder implements IParser
 
         $rootNode = $xml->addChild('V8Exch:Data', null, $NS['V8Exch']);
         foreach ($arData as $arRow) {
-            $userNode = $rootNode->addChild('v8:CatalogObject.Контрагенты', null, $NS['v8']);
-            $userNode->addChild('v8:Код', $arRow['LOGIN']);
-            $userNode->addChild('v8:НаименованиеЮр', $arRow['UF_2_WORK_COMPANY']);
-            $userNode->addChild('v8:НаименованиеРабочее', $arRow['UF_2_NAME']);
-            $userNode->addChild('v8:ФИОДиректора', $arRow['UF_2_FIO_DIR']);
-            $userNode->addChild('v8:Регион', $arRow['UF_2_PERSONAL_STATE']);
-            $userNode->addChild('v8:Район', $arRow['UF_2_RAION']);
-            $userNode->addChild('v8:Город', $arRow['UF_2_PERSONAL_CITY']);
-            $userNode->addChild('v8:ФИОКонтактноеЛицо', $arRow['UF_2_KONT_LITSO_FIO']);
-            $userNode->addChild('v8:Телефон', $arRow['UF_2_PERSONAL_PHONE']);
-            $userNode->addChild('v8:ЭлектроннаяПочта', $arRow['UF_2_EMAIL']);
-            $userNode->addChild('v8:АдресДоставки', $arRow['UF_2_PERSONAL_STREET']);
-            $userNode->addChild('v8:Вконтакте', $arRow['UF_2_VK_OTHER']);
-            $userNode->addChild('v8:Instagram', $arRow['UF_2_INST_OTHER']);
-            $userNode->addChild('v8:Facebook', $arRow['UF_2_FB_OTHER']);
+            $orderNode = $rootNode->addChild('v8:DocumentObject.ЗаказКлиента', null, $NS['v8']);
+            $orderNode->addChild('v8:ИД', $arRow['XML_ID']);
+            $orderNode->addChild('v8:ИДСайт', $arRow['ID']);
+            $orderNode->addChild('v8:Номер', $arRow['ACCOUNT_NUMBER']);
+            $orderNode->addChild('v8:ИДКлиента', $arRow['USER_XML']);
+            $orderNode->addChild('v8:ДатаСоздания', $arRow['DATE_INSERT']);
+            $orderNode->addChild('v8:Сумма', $arRow['PRICE']);
+            $orderNode->addChild('v8:Комментарий', $arRow['COMMENTS']);
+            $orderNode->addChild('v8:Статус', $arRow['PROPS']['EXCH_STATUS']);
+
+            $prodsNode = $orderNode->addChild('v8:Товары', null);
+            foreach($arRow['ITEMS'] as $arProd) {
+                $prodNode = $prodsNode->addChild('v8:Товар', null);
+
+                $sum = (float)$arProd['PRICE'] * (float)$arProd['QUANTITY'];
+
+                $prodNode->addChild('v8:ИД', $arProd['ID']);
+                $prodNode->addChild('v8:Название', $arProd['NAME']);
+                $prodNode->addChild('v8:Количество', $arProd['QUANTITY']);
+                $prodNode->addChild('v8:Цена', $arProd['PRICE']);
+                $prodNode->addChild('v8:Сумма', $sum);
+                $prodNode->addChild('v8:Статус', $arProd['EXCH_STATUS']);
+            }
         }
 
         return $xml;

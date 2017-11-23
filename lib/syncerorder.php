@@ -7,6 +7,7 @@ use Bitrix\Main\Diag\Debug;
 use Bitrix\Main\Loader;
 use Bitrix\Main\Type\Date;
 use Bitrix\Main\Type\DateTime;
+use Bitrix\Sale\Order;
 
 class SyncerOrder implements ISyncer
 {
@@ -170,6 +171,9 @@ class SyncerOrder implements ISyncer
 
     public function import(FtpClient $ftpClient)
     {
+
+        throw new \Exception('Not ready for testing');
+
         $arResultMsg = [
             'type' => 'success',
             'msg' => 'ok',
@@ -258,7 +262,7 @@ class SyncerOrder implements ISyncer
             return false;
         }
 
-        // Собираем всех пользователей для передачи
+        // Собираем всех заказы для передачи
         $arData = $this->getDataForExport();
 
         if(count($arData) <= 0) {
@@ -285,7 +289,7 @@ class SyncerOrder implements ISyncer
         $arResultMsg['msg'] = 'Передано записей: ' . count($arData);
 
         Tables\SyncHistoryTable::add([
-            'name' => 'user',
+            'name' => 'order',
             'operation' => 'export',
             'result' => $arResultMsg['type'],
             'msg' => $arResultMsg['msg'],
@@ -298,86 +302,113 @@ class SyncerOrder implements ISyncer
 
     protected function getDataForExport()
     {
-        $arFieldsUF = [
-
-            'UF_2_WORK_COMPANY', //'Служебное Название компании'
-            'UF_2_NAME', //'Служебное Название магазина'
-            'UF_FIO_DIR', //'ФИО Директора'
-            'UF_2_FIO_DIR', //'Служебное ФИО Директора'
-            'UF_2_PERSONAL_STATE', //'Служебное Регион'
-            'UF_RAION', //'Район'
-            'UF_2_RAION', //'Служебное Район'
-            'UF_2_PERSONAL_CITY', //'Служебное Город'
-            'UF_UR_ADR', //'Юридический адрес'
-            'UF_2_UR_ADR', //'Служебное Юридический адрес'
-            'UF_2_PERSONAL_PHONE', //'Служебное Телефон'
-            'UF_2_EMAIL', //'Служебное Электронная почта'
-            'UF_2_PERSONAL_STREET', //'Служебное АдресДоставки'
-            'UF_VK_OTHER', //'Вконтакте'
-            'UF_2_VK_OTHER', //'Служебное Вконтакте'
-            'UF_INST_OTHER', //'Instagram'
-            'UF_2_INST_OTHER', //'Служебное Instagram'
-            'UF_FB_OTHER', //'Facebook'
-            'UF_2_FB_OTHER', //'Служебное Facebook'
-            'UF_KONT_LITSO_FIO', //'Контактное лицо'
-            'UF_2_KONT_LITSO_FIO', //'Служебное Контактное лицо'
+        $arOrder = [];
+        $arFilter = [
+            ">=DATE_INSERT" => date(\Bitrix\Main\Type\Date::convertFormatToPhp(\CSite::GetDateFormat("FULL")), mktime(0, 0, 0, date("n"), 1, date("Y")))
+        ];
+        $arSelect = [
+            'ID',
+            'XML_ID',
+            'ACCOUNT_NUMBER',
+            'DATE_INSERT',
+            'PRICE',
+            'COMMENTS',
         ];
 
-        $arFieldsSTANDART = [
-            'ID',
-            'LOGIN',
-            'WORK_COMPANY', //'Название компании'
-            'NAME', //'Название магазина'
-            'PERSONAL_STATE', //'Регион'
-            'PERSONAL_CITY', //'Город'
-            'PERSONAL_PHONE', //'Телефон'
-            'EMAIL', //'Электронная почта'
-            'PERSONAL_STREET', //'АдресДоставки'
+        $dbRes = \CSaleOrder::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+        $arData = [];
+        $arOrderIDs = [];
+        while ($arRow = $dbRes->GetNext()) {
+            $arData[] = $arRow;
+            $arOrderIDs[] = $arRow['ID'];
+        }
+
+        // Получаем свойства заказа
+        $arPropCodes = [
+            'EXCH_STATUS',
+            'EXPORT_DO',
+            'IS_IMPORTED',
+            'EDIT_REQUEST_DT',
+            'EDIT_RESPONS_DT',
+            'EXT_STATUS',
+            'USER_XML',
         ];
 
         $arFilter = [
-            'UF_EXPORT_DO' => 'Y',
+            "ORDER_ID" => $arOrderIDs,
+            "CODE" => $arPropCodes,
         ];
 
-        $arParams = [
-            'FIELDS' => $arFieldsSTANDART,
-            'SELECT' => $arFieldsUF,
+        $arSelect = [
+            'ORDER_ID',
+            'CODE',
+            'NAME',
+            'VALUE',
         ];
 
-        $dbRes = \CUser::GetList(
-            $by = "timestamp_x",
-            $order = "desc",
-            $arFilter,
-            $arParams);
+        $arProps = [];
+        $dbRes = \CSaleOrderPropsValue::GetList($arOrder, $arFilter, false, false, $arSelect);
+        while ($arRes = $dbRes->GetNext()) {
+            $key = $arRes["ORDER_ID"] . $arRes["CODE"];
+            $arProps[$key] = $arRes["VALUE"];
+        }
 
-        $arData = [];
-        while ($arRow = $dbRes->GetNext()) {
-            $arData[] = $arRow;
+        // Получаем товары заказа
+        $arFilter = [
+            "ORDER_ID" => $arOrderIDs,
+            //"CODE" => $arPropCodes,
+        ];
+
+        $arSelect = [
+            'ID',
+            'ORDER_ID',
+            'NAME',
+            'QUANTITY',
+            'PRICE',
+        ];
+
+        $dbRes = \CSaleBasket::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+        $arItems = [];
+        while ($arRes = $dbRes->GetNext()) {
+            $arItems[$arRes['ORDER_ID']][] = $arRes;
+        }
+
+        foreach ($arData as $key => $arZak) {
+            $arOrderProps = [];
+            foreach ($arPropCodes as $arPropCode) {
+                $propKey = $arZak["ID"] . $arPropCode;
+                $arOrderProps[$arPropCode] = isset($arProps[$propKey]) ? $arProps[$propKey] : '';
+            }
+
+            $arData[$key]['PROPS'] = $arOrderProps;
+            $arData[$key]['ITEMS'] = $arItems[$arZak["ID"]];
         }
 
         return $arData;
     }
 
     public function unCheckExported($arData) {
-        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
-
-        foreach ($arData as $arUser) {
-
-            $arFields = [
-                'UF_EXPORT_DO' => 'N',
-                'UF_EDIT_REQUEST_DT' => $expDate,
-            ];
-
-            $user = new \CUser();
-
-            $userID = $user->Update($arUser['ID'], $arFields);
-
-            if (!$userID) {
-//            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
-                Debug::dump($user->LAST_ERROR);
-                return false;
-            }
-        }
+//        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
+//
+//        foreach ($arData as $arUser) {
+//
+//            $arFields = [
+//                'UF_EXPORT_DO' => 'N',
+//                'UF_EDIT_REQUEST_DT' => $expDate,
+//            ];
+//
+//            $user = new \CUser();
+//
+//            $userID = $user->Update($arUser['ID'], $arFields);
+//
+//            if (!$userID) {
+////            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
+//                Debug::dump($user->LAST_ERROR);
+//                return false;
+//            }
+//        }
     }
 
     protected function sendEmailForNewUsers($arUsers) {
