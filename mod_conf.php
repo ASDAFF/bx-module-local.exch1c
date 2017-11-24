@@ -276,11 +276,27 @@ $arSaleOrderProps = [
     ],
 
     [
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное Требуется передать в 1С",
+        "TYPE" => "TEXT",
+        "CODE" => "EXPORT_DO_UR",
+    ],
+
+    [
         "PERSON_TYPE_NAME" => 'Физическое лицо',
         "PROPS_GROUP_NAME" => 'Служебные',
         "NAME" => "Служебное Получен из 1С",
         "TYPE" => "TEXT",
         "CODE" => "IS_IMPORTED",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное Получен из 1С",
+        "TYPE" => "TEXT",
+        "CODE" => "IS_IMPORTED_UR",
     ],
 
     [
@@ -292,11 +308,27 @@ $arSaleOrderProps = [
     ],
 
     [
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное дата запроса",
+        "TYPE" => "TEXT",
+        "CODE" => "EDIT_REQUEST_DT_UR",
+    ],
+
+    [
         "PERSON_TYPE_NAME" => 'Физическое лицо',
         "PROPS_GROUP_NAME" => 'Служебные',
         "NAME" => "Служебное дата подтверждения",
         "TYPE" => "TEXT",
         "CODE" => "EDIT_RESPONS_DT",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное дата подтверждения",
+        "TYPE" => "TEXT",
+        "CODE" => "EDIT_RESPONS_DT_UR",
     ],
 
     [
@@ -308,13 +340,12 @@ $arSaleOrderProps = [
     ],
 
     [
-        "PERSON_TYPE_NAME" => 'Физическое лицо',
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
         "PROPS_GROUP_NAME" => 'Служебные',
-        "NAME" => "Служебное xml_id клиента",
+        "NAME" => "Служебное статус заказа",
         "TYPE" => "TEXT",
-        "CODE" => "USER_XML",
+        "CODE" => "EXT_STATUS_UR",
     ],
-
 
 ];
 

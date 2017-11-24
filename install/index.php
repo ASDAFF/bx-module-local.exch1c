@@ -513,6 +513,14 @@ class local_exch1c extends CModule
      */
     public function InstallEvents()
     {
+        EventManager::getInstance()->registerEventHandler(
+            "sale",
+            "OnSaleOrderSaved",
+            $this->MODULE_ID,
+            "\\Local\\Exch1c\\EventerOrder",
+            "markOrderForExport"
+        );
+
         return true;
     }
 
@@ -522,6 +530,14 @@ class local_exch1c extends CModule
      */
     public function UnInstallEvents()
     {
+        EventManager::getInstance()->unRegisterEventHandler(
+            "sale",
+            "OnSaleOrderSaved",
+            $this->MODULE_ID,
+            "\\Local\\Exch1c\\EventerOrder",
+            "markOrderForExport"
+        );
+
         return true;
     }
 
@@ -1055,6 +1071,7 @@ class local_exch1c extends CModule
             "DESCRIPTION" => "",
             "MULTIPLE" => "N",
             "UTIL" => "N",
+            "SETTINGS" => "",
         ];
 
         $arFilter = [
@@ -1099,6 +1116,8 @@ class local_exch1c extends CModule
                 continue;
             }
 
+            $arOrderProp = CSaleOrderPropsAdapter::convertOldToNew($arOrderProp);
+            $arOrderProp = array_intersect_key($arOrderProp, CSaleOrderPropsAdapter::$allFields);
             $res = OrderPropsTable::add($arOrderProp);
 
             if(!$res->isSuccess()) {

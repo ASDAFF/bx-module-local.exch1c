@@ -269,6 +269,11 @@ class SyncerOrder implements ISyncer
             return false;
         }
 
+        Debug::dump($arData);
+        $this->unCheckExported($arData);
+
+        return false;
+
         // Создаем XML код
         $xml = $ftpClient->getParser()->makeXml($arData);
 
@@ -300,11 +305,66 @@ class SyncerOrder implements ISyncer
         ];
     }
 
-    protected function getDataForExport()
+    /**
+     * Получение кодов заказов для экспорта (с заполненным свойством "EXPORT_DO" = "Y")
+     * @return array
+     */
+    private function getOrderForExportIDs()
     {
         $arOrder = [];
         $arFilter = [
-            ">=DATE_INSERT" => date(\Bitrix\Main\Type\Date::convertFormatToPhp(\CSite::GetDateFormat("FULL")), mktime(0, 0, 0, date("n"), 1, date("Y")))
+            "CODE" => 'EXPORT_DO_UR',
+            "VALUE" => 'Y',
+        ];
+
+        $arSelect = [
+            'ORDER_ID',
+            'CODE',
+            'NAME',
+            'VALUE',
+        ];
+
+        $arIDs = [];
+        $dbRes = \CSaleOrderPropsValue::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+        while ($arRes = $dbRes->GetNext()) {
+            $arIDs[] = $arRes['ORDER_ID'];
+        }
+
+        if(count($arIDs) <= 0 ) {
+            $arOrder = [];
+            $arFilter = [
+                "CODE" => 'EXPORT_DO',
+                "VALUE" => 'Y',
+            ];
+
+            $arSelect = [
+                'ORDER_ID',
+                'CODE',
+                'NAME',
+                'VALUE',
+            ];
+
+            $arIDs = [];
+            $dbRes = \CSaleOrderPropsValue::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+            while ($arRes = $dbRes->GetNext()) {
+                $arIDs[] = $arRes['ORDER_ID'];
+            }
+        }
+
+        return $arIDs;
+    }
+
+    /**
+     * Получение заказов для экспорта
+     * @return array
+     */
+    private function getOrdersForExport($arIDs)
+    {
+        $arOrder = [];
+        $arFilter = [
+            "ID" => $arIDs,
         ];
         $arSelect = [
             'ID',
@@ -313,30 +373,56 @@ class SyncerOrder implements ISyncer
             'DATE_INSERT',
             'PRICE',
             'COMMENTS',
+            'USER_ID',
+            'USER_LOGIN',
         ];
 
         $dbRes = \CSaleOrder::GetList($arOrder, $arFilter, false, false, $arSelect);
 
         $arData = [];
-        $arOrderIDs = [];
         while ($arRow = $dbRes->GetNext()) {
             $arData[] = $arRow;
-            $arOrderIDs[] = $arRow['ID'];
         }
 
-        // Получаем свойства заказа
-        $arPropCodes = [
-            'EXCH_STATUS',
-            'EXPORT_DO',
-            'IS_IMPORTED',
-            'EDIT_REQUEST_DT',
-            'EDIT_RESPONS_DT',
-            'EXT_STATUS',
-            'USER_XML',
-        ];
+        return $arData;
+    }
+
+    /**
+     * Получение клиентов по ID
+     * @return array
+     */
+    private function getUsers($arIDs) {
+
+        $by = "timestamp_x";
+        $order = "desc";
 
         $arFilter = [
-            "ORDER_ID" => $arOrderIDs,
+            "ID" => implode(' | ', $arIDs),
+        ];
+
+        $arSelect = [
+            'ID',
+            'XML_ID',
+        ];
+
+        $dbRes = \CUser::GetList($by, $order, $arFilter, ['FIELDS' => $arSelect]);
+        $arData = [];
+        while ($arRes = $dbRes->GetNext()) {
+            $arData[$arRes["ID"]] = $arRes["XML_ID"];
+        }
+
+        return $arData;
+    }
+
+    /**
+     * Получение значений свойств заказов
+     * @return array
+     */
+    private function getOrderProps($arIDs, $arPropCodes = []) {
+        $arOrder = [];
+
+        $arFilter = [
+            "ORDER_ID" => $arIDs,
             "CODE" => $arPropCodes,
         ];
 
@@ -354,10 +440,17 @@ class SyncerOrder implements ISyncer
             $arProps[$key] = $arRes["VALUE"];
         }
 
-        // Получаем товары заказа
+        return $arProps;
+    }
+
+    /**
+     * Получение товаров заказов
+     * @return array
+     */
+    private function getOrderProds($arIDs) {
+        $arOrder = [];
         $arFilter = [
-            "ORDER_ID" => $arOrderIDs,
-            //"CODE" => $arPropCodes,
+            "ORDER_ID" => $arIDs,
         ];
 
         $arSelect = [
@@ -375,40 +468,110 @@ class SyncerOrder implements ISyncer
             $arItems[$arRes['ORDER_ID']][] = $arRes;
         }
 
-        foreach ($arData as $key => $arZak) {
+        return $arItems;
+    }
+
+    /**
+     * Получение данных по заказам и товарам для экспорта
+     * @return array
+     */
+    protected function getDataForExport()
+    {
+        // Найдем коды заказов с заполненным свойством "EXPORT_DO"
+        $arZakIDs = $this->getOrderForExportIDs();
+
+        // Получим заказы для экспорта
+        $arZaks = $this->getOrdersForExport($arZakIDs);
+
+        $arUserIDs = [];
+        foreach ($arZaks as $arZak) {
+            $arUserIDs[] = $arZak['USER_ID'];
+        }
+
+        // Получаем клиентов заказа
+        $arClients = $this->getUsers($arUserIDs);
+
+        // Получаем свойства заказа
+        $arPropCodes = [
+            'EXCH_STATUS',
+            'EXPORT_DO',
+            'IS_IMPORTED',
+            'EDIT_REQUEST_DT',
+            'EDIT_RESPONS_DT',
+            'EXT_STATUS',
+
+            'EXCH_STATUS_UR',
+            'EXPORT_DO_UR',
+            'IS_IMPORTED_UR',
+            'EDIT_REQUEST_DT_UR',
+            'EDIT_RESPONS_DT_UR',
+            'EXT_STATUS_UR',
+
+            'EMAIL'
+        ];
+
+        $arZakProps = $this->getOrderProps($arZakIDs, $arPropCodes);
+
+        // Получаем товары заказа
+        $arZakProds = $this->getOrderProds($arZakIDs);
+
+        // итоговая сборка данных
+        foreach ($arZaks as $key => $arZak) {
             $arOrderProps = [];
             foreach ($arPropCodes as $arPropCode) {
                 $propKey = $arZak["ID"] . $arPropCode;
-                $arOrderProps[$arPropCode] = isset($arProps[$propKey]) ? $arProps[$propKey] : '';
+                $arOrderProps[$arPropCode] = isset($arZakProps[$propKey]) ? $arZakProps[$propKey] : '';
             }
 
-            $arData[$key]['PROPS'] = $arOrderProps;
-            $arData[$key]['ITEMS'] = $arItems[$arZak["ID"]];
+            $arZaks[$key]['USER_XML'] = isset($arClients[$arZak["USER_ID"]]) ? $arClients[$arZak["USER_ID"]] : '';
+            $arZaks[$key]['PROPS'] = $arOrderProps;
+            $arZaks[$key]['ITEMS'] = $arZakProds[$arZak["ID"]];
         }
 
-        return $arData;
+        return $arZaks;
     }
 
+    /**
+     * Снимаем флаг 'EXPORT_DO' на заказах
+     * @return boolean
+     */
     public function unCheckExported($arData) {
-//        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
-//
-//        foreach ($arData as $arUser) {
-//
-//            $arFields = [
-//                'UF_EXPORT_DO' => 'N',
-//                'UF_EDIT_REQUEST_DT' => $expDate,
-//            ];
-//
-//            $user = new \CUser();
-//
-//            $userID = $user->Update($arUser['ID'], $arFields);
-//
-//            if (!$userID) {
-////            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
-//                Debug::dump($user->LAST_ERROR);
-//                return false;
-//            }
-//        }
+        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
+
+        foreach($arData as $arOrder) {
+            Debug::dump('Uncheck = ' . $arOrder['ID']);
+            $order = \Bitrix\Sale\Order::load($arOrder['ID']);
+
+            $propertyCollection = $order->getPropertyCollection();
+
+            /** @var \Bitrix\Sale\PropertyValue $obProp */
+            foreach ($propertyCollection as $obProp) {
+                $arProp = $obProp->getProperty();
+
+                switch ($arProp["CODE"]) {
+                    case "EXPORT_DO":
+                    case "EXPORT_DO_UR":
+                        $obProp->setValue('N');
+                        break;
+
+                    case "EDIT_REQUEST_DT":
+                    case "EDIT_REQUEST_DT_UR":
+                        $obProp->setValue($expDate);
+                        break;
+
+                    default:
+                        continue;
+                }
+
+            }
+
+            $res = $order->save();
+            if (!$res->isSuccess()) {
+                Debug::dump($res->getErrorMessages());
+            }
+        }
+
+        return true;
     }
 
     protected function sendEmailForNewUsers($arUsers) {
