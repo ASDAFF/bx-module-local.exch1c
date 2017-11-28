@@ -136,15 +136,19 @@ class ParserOrder implements IParser
 
         $rootNode = $xml->addChild('V8Exch:Data', null, $NS['V8Exch']);
         foreach ($arData as $arRow) {
+            $orderStatus = $arRow['PROPS']['EXT_STATUS']
+                ? $arRow['PROPS']['EXT_STATUS']
+                : $arRow['PROPS']['EXT_STATUS_UR'];
+
             $orderNode = $rootNode->addChild('v8:DocumentObject.ЗаказКлиента', null, $NS['v8']);
             $orderNode->addChild('v8:ИД', $arRow['XML_ID']);
             $orderNode->addChild('v8:ИДСайт', $arRow['ID']);
             $orderNode->addChild('v8:Номер', $arRow['ACCOUNT_NUMBER']);
-            $orderNode->addChild('v8:ИДКлиента', $arRow['USER_XML']);
+            $orderNode->addChild('v8:КодКлиента', $arRow['USER_LOGIN']);
             $orderNode->addChild('v8:ДатаСоздания', $arRow['DATE_INSERT']);
             $orderNode->addChild('v8:Сумма', $arRow['PRICE']);
             $orderNode->addChild('v8:Комментарий', $arRow['COMMENTS']);
-            $orderNode->addChild('v8:Статус', $arRow['PROPS']['EXCH_STATUS']);
+            $orderNode->addChild('v8:Статус', $orderStatus);
 
             $prodsNode = $orderNode->addChild('v8:Товары', null);
             foreach($arRow['ITEMS'] as $arProd) {
@@ -152,7 +156,8 @@ class ParserOrder implements IParser
 
                 $sum = (float)$arProd['PRICE'] * (float)$arProd['QUANTITY'];
 
-                $prodNode->addChild('v8:ИД', $arProd['ID']);
+                $prodNode->addChild('v8:ИД', $arProd['PRODUCT_XML_ID']);
+                $prodNode->addChild('v8:ИДСайт', $arProd['ID']);
                 $prodNode->addChild('v8:Название', $arProd['NAME']);
                 $prodNode->addChild('v8:Количество', $arProd['QUANTITY']);
                 $prodNode->addChild('v8:Цена', $arProd['PRICE']);

@@ -7,6 +7,16 @@ $arConfCommon = [
     'prefix' => 'local_exch1c',
 ];
 
+$constName = str_replace('.', '_', $arConfCommon['name']).'_ORDER_STATUS_START';
+if (!defined($constName)) {
+    define($constName, 'Создан');
+};
+
+$constName = str_replace('.', '_', $arConfCommon['name']).'_ORDER_STATUS_EDIT';
+if (!defined($constName)) {
+    define($constName, 'Отредактирован');
+};
+
 /**
  * @var array $arCstmProps
  * пользовательские поля

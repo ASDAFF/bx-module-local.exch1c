@@ -397,13 +397,13 @@ class SyncerOrder implements ISyncer
 
         $arSelect = [
             'ID',
-            'XML_ID',
+            'LOGIN',
         ];
 
         $dbRes = \CUser::GetList($by, $order, $arFilter, ['FIELDS' => $arSelect]);
         $arData = [];
         while ($arRes = $dbRes->GetNext()) {
-            $arData[$arRes["ID"]] = $arRes["XML_ID"];
+            $arData[$arRes["ID"]] = $arRes["LOGIN"];
         }
 
         return $arData;
@@ -454,6 +454,7 @@ class SyncerOrder implements ISyncer
             'NAME',
             'QUANTITY',
             'PRICE',
+            'PRODUCT_XML_ID',
         ];
 
         $dbRes = \CSaleBasket::GetList($arOrder, $arFilter, false, false, $arSelect);
@@ -518,7 +519,7 @@ class SyncerOrder implements ISyncer
                 $arOrderProps[$arPropCode] = isset($arZakProps[$propKey]) ? $arZakProps[$propKey] : '';
             }
 
-            $arZaks[$key]['USER_XML'] = isset($arClients[$arZak["USER_ID"]]) ? $arClients[$arZak["USER_ID"]] : '';
+            $arZaks[$key]['USER_LOGIN'] = isset($arClients[$arZak["USER_ID"]]) ? $arClients[$arZak["USER_ID"]] : '';
             $arZaks[$key]['PROPS'] = $arOrderProps;
             $arZaks[$key]['ITEMS'] = $arZakProds[$arZak["ID"]];
         }
