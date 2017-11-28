@@ -9,11 +9,8 @@ class EventerOrder
 {
     public function markOrderForExport(Event $event) {
         $order = $event->getParameter("ENTITY");
-        $oldValues = $event->getParameter("VALUES");
-        $isNew = $event->getParameter("IS_NEW");
 
         $propertyCollection = $order->getPropertyCollection();
-        $doSave = false;
 
         /** @var \Bitrix\Sale\PropertyValue $obProp */
         foreach ($propertyCollection as $obProp) {
@@ -23,16 +20,12 @@ class EventerOrder
                 continue;
             }
 
-            if($arProp["CODE"] === "EXPORT_DO_UR" && $obProp->getValue() !== 'Y') {
-                $doSave = true;
+            if($arProp["CODE"] === "EXPORT_DO_UR" && $obProp->getValue() === 'NNN') {
+                $obProp->setValue('N');
+            } elseif($arProp["CODE"] === "EXPORT_DO_UR" && $obProp->getValue() !== 'Y') {
                 $obProp->setValue('Y');
             }
         }
 
-        if($doSave) {
-            //$order->save();
-        } else {
-            //$GLOBALS['APPLICATION']->throwException('Что-то пошло не так');
-        }
     }
 }

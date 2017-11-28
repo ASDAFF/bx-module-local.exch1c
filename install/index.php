@@ -515,7 +515,7 @@ class local_exch1c extends CModule
     {
         EventManager::getInstance()->registerEventHandler(
             "sale",
-            "OnSaleOrderSaved",
+            "OnSaleOrderBeforeSaved",
             $this->MODULE_ID,
             "\\Local\\Exch1c\\EventerOrder",
             "markOrderForExport"
@@ -532,7 +532,7 @@ class local_exch1c extends CModule
     {
         EventManager::getInstance()->unRegisterEventHandler(
             "sale",
-            "OnSaleOrderSaved",
+            "OnSaleOrderBeforeSaved",
             $this->MODULE_ID,
             "\\Local\\Exch1c\\EventerOrder",
             "markOrderForExport"

@@ -269,11 +269,6 @@ class SyncerOrder implements ISyncer
             return false;
         }
 
-        Debug::dump($arData);
-        $this->unCheckExported($arData);
-
-        return false;
-
         // Создаем XML код
         $xml = $ftpClient->getParser()->makeXml($arData);
 
@@ -539,7 +534,6 @@ class SyncerOrder implements ISyncer
         $expDate = (new \DateTime())->format('d.m.Y H:i:s');
 
         foreach($arData as $arOrder) {
-            Debug::dump('Uncheck = ' . $arOrder['ID']);
             $order = \Bitrix\Sale\Order::load($arOrder['ID']);
 
             $propertyCollection = $order->getPropertyCollection();
@@ -551,7 +545,7 @@ class SyncerOrder implements ISyncer
                 switch ($arProp["CODE"]) {
                     case "EXPORT_DO":
                     case "EXPORT_DO_UR":
-                        $obProp->setValue('N');
+                        $obProp->setValue('NNN');
                         break;
 
                     case "EDIT_REQUEST_DT":
