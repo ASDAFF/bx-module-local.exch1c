@@ -63,53 +63,33 @@ class ParserOrder implements IParser
         $arClients = [];
         $arClientsKods = [];
 
-        foreach ($xml->КлиентСайта as $xmlClient) {
-            $kod = self::clearStr((string) $xmlClient->Код, '');
-            $arClientsKods[] = $kod;
+        foreach ($xml->ЗаказКлиента as $xmlObject) {
+            $xmlId = self::clearStr((string) $xmlObject->ИД, '');
+            $idSite = self::clearStr((string) $xmlObject->ИДСайт, '');
+            $arXmlIds[] = $xmlId;
+            $arIds[] = $idSite;
 
-            $arClient = [
-                'Код' => $kod,
-                'ВидКонтрагента' => self::clearStr((string) $xmlClient->ВидКонтрагента),
-                'НаименованиеЮр' => self::clearStr((string) $xmlClient->НаименованиеЮр),
-                'НаименованиеРабочее' => self::clearStr((string) $xmlClient->НаименованиеРабочее),
-                'ФИОДиректора' => self::clearStr((string) $xmlClient->ФИОДиректора),
-                'Регион' => self::clearStr((string) $xmlClient->Регион),
-                'Город' => self::clearStr((string) $xmlClient->Город),
-                'ЮрАдрес' => self::clearStr((string) $xmlClient->ЮрАдрес),
-                'КонтактноеЛицо' => [
-                    'ИД' => self::clearStr((string) $xmlClient->КонтактноеЛицо->ИД, ''),
-                    'ФИО' => self::clearStr((string) $xmlClient->КонтактноеЛицо->ФИО),
-                ],
-                'Телефон' => self::clearStr((string) $xmlClient->Телефон, ''),
-                'ЭлектроннаяПочта' => self::clearStr((string) $xmlClient->ЭлектроннаяПочта, ''),
-                'АдресДоставки' => self::clearStr((string) $xmlClient->АдресДоставки),
-                'Вконтакте' => self::clearStr((string) $xmlClient->Вконтакте, ''),
-                'Instagram' => self::clearStr((string) $xmlClient->Instagram, ''),
-                'Facebook' => self::clearStr((string) $xmlClient->Facebook, ''),
-                'Скидка' => self::clearStr((string) $xmlClient->Скидка, ''),
-                'СкидкаНаВходныеДвери' => self::clearStr((string) $xmlClient->СкидкаНаВходныеДвери, ''),
-                'СкидкаНаМежкомнатныеДвери' => self::clearStr((string) $xmlClient->СкидкаНаМежкомнатныеДвери, ''),
-                'СкидкаНаНапольныеПокрытия' => self::clearStr((string) $xmlClient->СкидкаНаНапольныеПокрытия, ''),
-                'СкидкаНаФурнитуру' => self::clearStr((string) $xmlClient->СкидкаНаФурнитуру, ''),
-                'ОтсрочкаДней' => self::clearStr((string) $xmlClient->ОтсрочкаДней, ''),
-                'ОтсрочкаРублей' => self::clearStr((string) $xmlClient->ОтсрочкаРублей, ''),
-                'ВитринВсего' => self::clearStr((string) $xmlClient->ВитринВсего, ''),
-                'Статус' => self::clearStr((string) $xmlClient->Статус),
-                'РегиональныйМенеджер' => [
-                    'ИД' => self::clearStr((string) $xmlClient->РегиональныйМенеджер->ИД, ''),
-                    'ФИО' => self::clearStr((string) $xmlClient->РегиональныйМенеджер->ФИО),
-                    'Телефон' => self::clearStr((string) $xmlClient->РегиональныйМенеджер->Телефон, ''),
-                    'ЭлектроннаяПочта' => self::clearStr((string) $xmlClient->РегиональныйМенеджер->ЭлектроннаяПочта, ''),
-                ],
-                'ОтветственныйМенеджер' => [
-                    'ИД' => self::clearStr((string) $xmlClient->ОтветственныйМенеджер->ИД, ''),
-                    'ФИО' => self::clearStr((string) $xmlClient->ОтветственныйМенеджер->ФИО),
-                    'Телефон' => self::clearStr((string) $xmlClient->ОтветственныйМенеджер->Телефон, ''),
-                    'ЭлектроннаяПочта' => self::clearStr((string) $xmlClient->ОтветственныйМенеджер->ЭлектроннаяПочта, ''),
-                ],
+            $arOrder = [
+                'ИД' => $xmlId,
+                'ИДСайт' => $idSite,
+                'Номер' => self::clearStr((string) $xmlObject->Номер),
+                'КодКлиента' => self::clearStr((string) $xmlObject->КодКлиента),
+                'ДатаСоздания' => self::clearStr((string) $xmlObject->ДатаСоздания),
+                'Сумма' => self::clearStr((string) $xmlObject->Сумма),
+                'Комментарий' => self::clearStr((string) $xmlObject->Комментарий),
+                'Статус' => self::clearStr((string) $xmlObject->Статус),
+                'Товары' => [],
             ];
 
-            $arClients[$kod] = $arClient;
+            Debug::dump(isset($xmlObject->Товары));
+            Debug::dump(count($xmlObject->Товары));
+            Debug::dump($xmlObject->Товары);
+
+            foreach ($xmlObject->Товары as $item) {
+                Debug::dump($item);
+            }
+
+            $arOrders[$xmlId . $idSite] = $arOrder;
         }
 
         $arResult = [

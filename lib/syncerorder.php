@@ -22,157 +22,50 @@ class SyncerOrder implements ISyncer
 
     private function _create($arUser)
     {
-        $pass = randString(7);
 
         $expDate = (new \DateTime())->format('d.m.Y H:i:s');
 
-        $arFields = [
-            'LOGIN' => $arUser['Код'],
-            'EMAIL' => $arUser['ЭлектроннаяПочта'],
-            'PASSWORD' => $pass,
-            'CONFIRM_PASSWORD' => $pass,
-            'GROUP_ID' => [USER_GROUP_REGED_ID, USER_GROUP_OPT_ID],
-            'ACTIVE' => 'Y',
-            'LID' => $this->siteId,
-            'WORK_PROFILE' => $arUser['ВидКонтрагента'],
-            'WORK_COMPANY' => $arUser['НаименованиеЮр'],
-            'NAME' => $arUser['НаименованиеРабочее'],
-            'UF_FIO_DIR' => $arUser['ФИОДиректора'],
-            'PERSONAL_STATE' => $arUser['Регион'],
-            'UF_RAION' => $arUser['Район'],
-            'PERSONAL_CITY' => $arUser['Город'],
-            'UF_UR_ADR' => $arUser['ЮрАдрес'],
-            'PERSONAL_PHONE' => $arUser['Телефон'],
-            'PERSONAL_STREET' => $arUser['АдресДоставки'],
-            'UF_VK_OTHER' => $arUser['Вконтакте'],
-            'UF_INST_OTHER' => $arUser['Instagram'],
-            'UF_FB_OTHER' => $arUser['Facebook'],
-            'UF_DISCOUNT_COMMON' => $arUser['Скидка'],
-            'UF_DISCOUNT_VHD' => $arUser['СкидкаНаВходныеДвери'],
-            'UF_DISCOUNT_MKD' => $arUser['СкидкаНаМежкомнатныеДвери'],
-            'UF_DISCOUNT_POL' => $arUser['СкидкаНаНапольныеПокрытия'],
-            'UF_DISCOUNT_FUR' => $arUser['СкидкаНаФурнитуру'],
-            'UF_OTSROCHKA_DAY' => $arUser['ОтсрочкаДней'],
-            'UF_OTSROCHKA_RUB' => $arUser['ОтсрочкаРублей'],
-            'UF_VITR_ALL' => $arUser['ВитринВсего'],
-            'UF_STATUS' => $arUser['Статус'],
-
-            'UF_KONT_LITSO_ID' => $arUser['КонтактноеЛицо']['ИД'],
-            'UF_KONT_LITSO_FIO' => $arUser['КонтактноеЛицо']['ФИО'],
-
-            'UF_REGMAN_ID' => $arUser['РегиональныйМенеджер']['ИД'],
-            'UF_REGMAN_FIO' => $arUser['РегиональныйМенеджер']['ФИО'],
-            'UF_REGMAN_PHONE' => $arUser['РегиональныйМенеджер']['Телефон'],
-            'UF_REGMAN_EMAIL' => $arUser['РегиональныйМенеджер']['ЭлектроннаяПочта'],
-
-            'UF_LOCMAN_ID' => $arUser['ОтветственныйМенеджер']['ИД'],
-            'UF_LOCMAN_FIO' => $arUser['ОтветственныйМенеджер']['ФИО'],
-            'UF_LOCMAN_PHONE' => $arUser['ОтветственныйМенеджер']['Телефон'],
-            'UF_LOCMAN_EMAIL' => $arUser['ОтветственныйМенеджер']['ЭлектроннаяПочта'],
-
-            'UF_START_PASS' => $pass,
-            'UF_IS_IMPORTED' => 'Y',
-            'UF_IMPORT_DT' => $expDate,
-        ];
-
-        //КонтактноеЛицо
-
-        $user = new \CUser();
-
-        $userID = $user->Add($arFields);
-
-        if (!$userID) {
-//            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
-            Debug::dump($user->LAST_ERROR);
-            return false;
-        }
-
-        return [
-            'ID' => $userID,
-            'LOGIN' => $arFields['LOGIN'],
-            'EMAIL' => $arFields['EMAIL'],
-            'PASSWORD' => $arFields['PASSWORD'],
-        ];
+//        $arFields = [
+//        ];
+//
+//        if (!$ID) {
+////            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
+//            Debug::dump($user->LAST_ERROR);
+//            return false;
+//        }
+//
+//        return [
+//            'ID' => $ID,
+//            'LOGIN' => $arFields['LOGIN'],
+//            'EMAIL' => $arFields['EMAIL'],
+//            'PASSWORD' => $arFields['PASSWORD'],
+//        ];
     }
 
     private function _update($arUser)
     {
         $expDate = (new \DateTime())->format('d.m.Y H:i:s');
 
-        $arFields = [
-            'LOGIN' => $arUser['Код'],
-            'EMAIL' => $arUser['ЭлектроннаяПочта'],
-//            'PASSWORD' => $pass,
-//            'CONFIRM_PASSWORD' => $pass,
-            'GROUP_ID' => [USER_GROUP_REGED_ID, USER_GROUP_OPT_ID],
-            'ACTIVE' => 'Y',
-            'LID' => $this->siteId,
-            'WORK_PROFILE' => $arUser['ВидКонтрагента'],
-            'WORK_COMPANY' => $arUser['НаименованиеЮр'],
-            'NAME' => $arUser['НаименованиеРабочее'],
-            'UF_FIO_DIR' => $arUser['ФИОДиректора'],
-            'PERSONAL_STATE' => $arUser['Регион'],
-            'UF_RAION' => $arUser['Район'],
-            'PERSONAL_CITY' => $arUser['Город'],
-            'UF_UR_ADR' => $arUser['ЮрАдрес'],
-            'PERSONAL_PHONE' => $arUser['Телефон'],
-            'PERSONAL_STREET' => $arUser['АдресДоставки'],
-            'UF_VK_OTHER' => $arUser['Вконтакте'],
-            'UF_INST_OTHER' => $arUser['Instagram'],
-            'UF_FB_OTHER' => $arUser['Facebook'],
-            'UF_DISCOUNT_COMMON' => $arUser['Скидка'],
-            'UF_DISCOUNT_VHD' => $arUser['СкидкаНаВходныеДвери'],
-            'UF_DISCOUNT_MKD' => $arUser['СкидкаНаМежкомнатныеДвери'],
-            'UF_DISCOUNT_POL' => $arUser['СкидкаНаНапольныеПокрытия'],
-            'UF_DISCOUNT_FUR' => $arUser['СкидкаНаФурнитуру'],
-            'UF_OTSROCHKA_DAY' => $arUser['ОтсрочкаДней'],
-            'UF_OTSROCHKA_RUB' => $arUser['ОтсрочкаРублей'],
-            'UF_VITR_ALL' => $arUser['ВитринВсего'],
-            'UF_STATUS' => $arUser['Статус'],
-
-            'UF_KONT_LITSO_ID' => $arUser['КонтактноеЛицо']['ИД'],
-            'UF_KONT_LITSO_FIO' => $arUser['КонтактноеЛицо']['ФИО'],
-
-            'UF_REGMAN_ID' => $arUser['РегиональныйМенеджер']['ИД'],
-            'UF_REGMAN_FIO' => $arUser['РегиональныйМенеджер']['ФИО'],
-            'UF_REGMAN_PHONE' => $arUser['РегиональныйМенеджер']['Телефон'],
-            'UF_REGMAN_EMAIL' => $arUser['РегиональныйМенеджер']['ЭлектроннаяПочта'],
-
-            'UF_LOCMAN_ID' => $arUser['ОтветственныйМенеджер']['ИД'],
-            'UF_LOCMAN_FIO' => $arUser['ОтветственныйМенеджер']['ФИО'],
-            'UF_LOCMAN_PHONE' => $arUser['ОтветственныйМенеджер']['Телефон'],
-            'UF_LOCMAN_EMAIL' => $arUser['ОтветственныйМенеджер']['ЭлектроннаяПочта'],
-
-            'UF_EDIT_RESPONS_DT' => $expDate,
-            'UF_NEED_CONFIRM' => 'N',
-
-//            'UF_START_PASS' => $pass,
-        ];
-
-        //КонтактноеЛицо
-
-        $user = new \CUser();
-
-        $userID = $user->Update($arUser['ID'], $arFields);
-
-        if (!$userID) {
-//            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
-            Debug::dump($user->LAST_ERROR);
-            return false;
-        }
-
-        return [
-            'ID' => $userID,
-            'LOGIN' => $arFields['LOGIN'],
-            'EMAIL' => $arFields['EMAIL'],
-            'PASSWORD' => $arFields['PASSWORD'],
-        ];
+//        $arFields = [
+//
+//        ];
+//
+//        if (!$userID) {
+////            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
+//            Debug::dump($user->LAST_ERROR);
+//            return false;
+//        }
+//
+//        return [
+//            'ID' => $userID,
+//            'LOGIN' => $arFields['LOGIN'],
+//            'EMAIL' => $arFields['EMAIL'],
+//            'PASSWORD' => $arFields['PASSWORD'],
+//        ];
     }
 
     public function import(FtpClient $ftpClient)
     {
-
-        throw new \Exception('Not ready for testing');
 
         $arResultMsg = [
             'type' => 'success',
@@ -192,47 +85,14 @@ class SyncerOrder implements ISyncer
             return $arResult;
         }
 
-        $arNewUsers = [];
+        $arNewRows = [];
 
         foreach ($arData['OBJECTS'] as $arObj) {
-            $arResult['CNT']++;
-            // получить пользователя по логину
-            $dbUser = \CUser::GetByLogin($arObj["Код"]);
-            $arUser = $dbUser->GetNext();
-
-            //Debug::dump($arUser);
-
-            $arTmpUser = false;
-
-            if (!$arUser) {
-                // создать
-                $arTmpUser = $this->_create($arObj);
-
-                if($arTmpUser) {
-                    $arNewUsers[] = $arTmpUser;
-                    $arResult['CNT_INS']++;
-                } else {
-                    $arResult['CNT_ERROR']++;
-                }
-
-            } else {
-                $arObj['ID'] = $arUser['ID'];
-                // обновить
-                $arTmpUser = $this->_update($arObj);
-
-                if($arTmpUser) {
-                    $arResult['CNT_UPD']++;
-                } else {
-                    $arResult['CNT_ERROR']++;
-                }
-            }
+            Debug::dump($arObj);
         }
 
         // Удаляем файл на FTP
-        $ftpClient->rmFtpImportFile();
-
-        // отправить уведомления новым пользователям
-        $this->sendEmailForNewUsers($arNewUsers);
+        //$ftpClient->rmFtpImportFile();
 
         // лог
         $arResultMsg['msg'] = 'Всего записей: ' . $arResult['CNT']
@@ -241,7 +101,7 @@ class SyncerOrder implements ISyncer
             . '; с ошибками: ' . $arResult['CNT_ERROR'] . ';';
 
         Tables\SyncHistoryTable::add([
-            'name' => 'user',
+            'name' => 'order',
             'operation' => 'import',
             'result' => $arResultMsg['type'],
             'msg' => $arResultMsg['msg'],
