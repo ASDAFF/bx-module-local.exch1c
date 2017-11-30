@@ -60,19 +60,25 @@ class ParserOrder implements IParser
 
         $expDate = \DateTime::createFromFormat('d.m.Y H:i:s', (string)$xml["ДатаВремя"]);
 
-        $arClients = [];
-        $arClientsKods = [];
+        $arOrders = [];
+        $arIds = [];
+        $arXmlIds = [];
+        $arAccountNumbers = [];
 
-        foreach ($xml->ЗаказКлиента as $xmlObject) {
+        $xmlObjects = $xml->ЗаказКлиента;
+
+        foreach ($xmlObjects as $xmlObject) {
             $xmlId = self::clearStr((string) $xmlObject->ИД, '');
             $idSite = self::clearStr((string) $xmlObject->ИДСайт, '');
+            $accountNumber = self::clearStr((string) $xmlObject->Номер);
             $arXmlIds[] = $xmlId;
             $arIds[] = $idSite;
+            $arAccountNumbers[] = $accountNumber;
 
             $arOrder = [
                 'ИД' => $xmlId,
                 'ИДСайт' => $idSite,
-                'Номер' => self::clearStr((string) $xmlObject->Номер),
+                'Номер' => $accountNumber,
                 'КодКлиента' => self::clearStr((string) $xmlObject->КодКлиента),
                 'ДатаСоздания' => self::clearStr((string) $xmlObject->ДатаСоздания),
                 'Сумма' => self::clearStr((string) $xmlObject->Сумма),
@@ -81,22 +87,35 @@ class ParserOrder implements IParser
                 'Товары' => [],
             ];
 
-            Debug::dump(isset($xmlObject->Товары));
-            Debug::dump(count($xmlObject->Товары));
-            Debug::dump($xmlObject->Товары);
+//            Debug::dump(isset($xmlObject->Товары));
+//            Debug::dump(count($xmlObject->Товары));
+//            Debug::dump($xmlObject->Товары);
 
-            foreach ($xmlObject->Товары as $item) {
-                Debug::dump($item);
+            if(isset($xmlObject->Товары)) {
+                foreach ($xmlObject->Товары->Товар as $item) {
+                    $arOrder['Товары'][] = [
+                        'ИД' => self::clearStr((string) $item->ИД),
+                        'ИДСайт' => self::clearStr((string) $item->ИДСайт),
+                        'Название' => self::clearStr((string) $item->Название),
+                        'Количество' => self::clearStr((string) $item->Количество),
+                        'Цена' => self::clearStr((string) $item->Цена),
+                        'Сумма' => self::clearStr((string) $item->Сумма),
+                        'Статус' => self::clearStr((string) $item->Статус),
+                    ];
+                }
             }
 
-            $arOrders[$xmlId . $idSite] = $arOrder;
+            $key = $accountNumber ? $accountNumber : $xmlId;
+            $arOrders[$key] = $arOrder;
         }
 
         $arResult = [
             'DATE' => $expDate,
-            'CODES' => $arClientsKods,
-            'OBJECTS' => $arClients,
+            'CODES' => $arAccountNumbers,
+            'OBJECTS' => $arOrders,
         ];
+
+//        Debug::dump($arResult);
 
         return $arResult;
     }

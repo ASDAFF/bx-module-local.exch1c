@@ -20,7 +20,7 @@ class SyncerOrder implements ISyncer
         $this->siteId = $arSite['ID'];
     }
 
-    private function _create($arUser)
+    private function _create($arData)
     {
 
         $expDate = (new \DateTime())->format('d.m.Y H:i:s');
@@ -42,9 +42,11 @@ class SyncerOrder implements ISyncer
 //        ];
     }
 
-    private function _update($arUser)
+    private function _update($arData)
     {
         $expDate = (new \DateTime())->format('d.m.Y H:i:s');
+
+        // если нет товаров, то обновляем только статус заказа
 
 //        $arFields = [
 //
@@ -85,10 +87,34 @@ class SyncerOrder implements ISyncer
             return $arResult;
         }
 
-        $arNewRows = [];
+        // получаем существующие на сайте заказы по ACCOUNT_NUMBER
+        $arExistedOrders = [];
+        $arOrder = [];
+        $arFilter = ["ACCOUNT_NUMBER" => $arData['CODES']];
+        $arSelect = [];
 
-        foreach ($arData['OBJECTS'] as $arObj) {
-            Debug::dump($arObj);
+        $dbRes = \CSaleOrder::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+        while ($arRes = $dbRes->GetNext()) {
+            $arExistedOrders[$arRes['ACCOUNT_NUMBER']] = $arRes;
+        }
+
+
+        foreach ($arData['OBJECTS'] as $key => $arObj) {
+            $arResult['CNT']++;
+
+            if (isset($arExistedOrders[$key])) {
+                $arResult['CNT_UPD']++;
+                $this->_update($arObj);
+                Debug::dump('Update');
+                Debug::dump($arObj);
+            } else {
+                $arResult['CNT_INS']++;
+                $this->_create($arObj);
+                Debug::dump('New');
+                Debug::dump($arObj);
+            }
+
         }
 
         // Удаляем файл на FTP

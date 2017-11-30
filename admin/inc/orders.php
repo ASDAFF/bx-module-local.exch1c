@@ -39,8 +39,8 @@ if ($request->isPost()) {
 
             if($arResult) {
                 echo 'Получено записей: ' . $arResult['CNT'] . '<br>';
-                echo 'Создано клиентов: ' . $arResult['CNT_INS'] . '<br>';
-                echo 'Обновлено клиентов: ' . $arResult['CNT_UPD'] . '<br>';
+                echo 'Создано заказов: ' . $arResult['CNT_INS'] . '<br>';
+                echo 'Обновлено заказов: ' . $arResult['CNT_UPD'] . '<br>';
                 echo 'Записей с ошибками: ' . $arResult['CNT_ERROR'] . '<br>';
                 echo '<br><br>';
             }
