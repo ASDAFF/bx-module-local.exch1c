@@ -5,9 +5,15 @@ namespace Local\Exch1c;
 use Bitrix\Main\Config\Option;
 use Bitrix\Main\Diag\Debug;
 use Bitrix\Main\Loader;
-use Bitrix\Main\Type\Date;
-use Bitrix\Main\Type\DateTime;
+use Bitrix\Sale\BasketPropertyItem;
+use Bitrix\Sale\Internals\BasketPropertyTable;
 use Bitrix\Sale\Order;
+use Bitrix\Sale\PropertyValue;
+use Bitrix\Main\Context;
+use Bitrix\Currency\CurrencyManager;
+use Bitrix\Sale\Basket;
+use Bitrix\Sale\Delivery;
+use \Bitrix\Sale\PaySystem;
 
 class SyncerOrder implements ISyncer
 {
@@ -22,48 +28,342 @@ class SyncerOrder implements ISyncer
 
     private function _create($arData)
     {
+        Loader::includeModule('sale');
+        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
+
+        Debug::dump($arData);
+
+        // проверим наличие пользователя
+        $arUser = \CUser::GetByLogin($arData['КодКлиента'])->Fetch();
+
+        if(!$arUser) {
+            return false;
+        }
+
+        // проверим наличие товаров
+        $arXmlIds = [];
+        $ar1CProds = [];
+        foreach ($arData["Товары"] as $arProd) {
+            $arXmlIds[] = $arProd['ИД'];
+            $ar1CProds[$arProd['ИД']] = $arProd;
+        }
+
+        $arOrder = [];
+        $arFilter = [
+            'IBLOCK_ID' => IBID_CATALOG,
+            'XML_ID' => $arXmlIds,
+        ];
+        $arSelect = ['IBLOCK_ID', 'ID', 'XML_ID', 'NAME'];
+        $dbRes = \CIBlockElement::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+        $arProds = [];
+        while($arRes = $dbRes->GetNext()) {
+            Debug::dump($arRes);
+            $arProds[] = $arRes;
+        }
+
+        if(count($arProds) <= 0) {
+            Debug::dump($arFilter);
+            Debug::dump("Товары не найдены");
+            return false;
+        }
+
+        // создаем заказ
+        $currencyCode = CurrencyManager::getBaseCurrency();
+        $userId = $arUser['ID'];
+
+        $order = Order::create($this->siteId, $userId);
+        $order->setPersonTypeId(2); // юр.лицо
+        $order->setField('CURRENCY', $currencyCode);
+        if ($arData['Комментарий']) {
+            $order->setField('USER_DESCRIPTION', $arData['Комментарий']); // Устанавливаем поля комментария покупателя
+        }
+
+        // создаем корзину и наполняем ее товарами
+        $basket = Basket::create($this->siteId);
+
+        foreach($arProds as $arProd) {
+            $item = $basket->createItem('catalog', $arProd['ID']);
+
+            $item->setFields(array(
+                'QUANTITY' => $ar1CProds[$arProd['XML_ID']]['Количество'],
+                'CURRENCY' => \Bitrix\Currency\CurrencyManager::getBaseCurrency(),
+                'LID' => $this->siteId,
+                'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
+                'CUSTOM_PRICE' => 'Y',
+                'PRICE' => $ar1CProds[$arProd['XML_ID']]['Цена'],
+            ));
+        }
+
+        // привязываем корзину к заказу
+        $order->setBasket($basket);
+        $order->getDiscount()->calculate();
+
+        // Создаём одну отгрузку
+        $shipmentCollection = $order->getShipmentCollection();
+        $shipment = $shipmentCollection->createItem();
+
+        // устанавливаем способ доставки
+        $deliveryType = 1;
+
+        $service = Delivery\Services\Manager::getById($deliveryType);
+        $shipment->setFields(array(
+            'DELIVERY_ID' => $service['ID'],
+            'DELIVERY_NAME' => $service['NAME'],
+        ));
+
+        // создаем список элементов отгрузки
+        $shipmentItemCollection = $shipment->getShipmentItemCollection();
+        $basketItems = $basket->getBasketItems();
+        foreach($basketItems as $basketItem) {
+            $shipmentItem = $shipmentItemCollection->createItem($basketItem);
+            $shipmentItem->setQuantity($basketItem->getQuantity());
+        }
+
+        // Создаём оплату со способом #1
+        $paymentCollection = $order->getPaymentCollection();
+        $payment = $paymentCollection->createItem();
+
+        $paySystemId = 1;
+        $paySystemService = PaySystem\Manager::getObjectById($paySystemId);
+        $payment->setFields(array(
+            'PAY_SYSTEM_ID' => $paySystemService->getField("PAY_SYSTEM_ID"),
+            'PAY_SYSTEM_NAME' => $paySystemService->getField("NAME"),
+        ));
+
+        //\Bitrix\Main\Diag\Debug::dump($this->_arFields);
+        // Устанавливаем свойства
+        $propertyCollection = $order->getPropertyCollection();
+        $phoneProp = $propertyCollection->getPhone();
+        $phoneProp->setValue($arUser['PERSONAL_PHONE']);
+        $nameProp = $propertyCollection->getPayerName();
+        $nameProp->setValue($arUser['NAME']);
+        $emailProp = $propertyCollection->getUserEmail();
+        $emailProp->setValue($arUser['EMAIL']);
+
+        // Сохраняем
+        $order->doFinalAction(true);
+        $result = $order->save();
+
+        if(!$result->isSuccess()) {
+            foreach ($result->getErrorMessages() as $errorMessage) {
+                Debug::dump($errorMessage);
+            }
+
+            return false;
+        }
+
+        return true;
+
+    }
+
+    private function _updateOrderStatus(Order $order, array $arData) {
 
         $expDate = (new \DateTime())->format('d.m.Y H:i:s');
 
-//        $arFields = [
-//        ];
-//
-//        if (!$ID) {
-////            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
-//            Debug::dump($user->LAST_ERROR);
-//            return false;
-//        }
-//
-//        return [
-//            'ID' => $ID,
-//            'LOGIN' => $arFields['LOGIN'],
-//            'EMAIL' => $arFields['EMAIL'],
-//            'PASSWORD' => $arFields['PASSWORD'],
-//        ];
+        $propertyCollection = $order->getPropertyCollection();
+
+        foreach ($propertyCollection as $property) {
+            /**
+             * @var $property PropertyValue
+             */
+
+            $arProp = $property->getProperty();
+
+            switch($arProp['CODE']) {
+                case 'EDIT_RESPONS_DT':
+                case 'EDIT_RESPONS_DT_UR':
+                    $property->setValue($expDate);
+                    break;
+
+                case 'EXPORT_DO':
+                case 'EXPORT_DO_UR':
+                    $property->setValue('NNN');
+                    break;
+
+                case 'EXT_STATUS':
+                case 'EXT_STATUS_UR':
+                    $property->setValue($arData['Статус']);
+                    Debug::dump($arProp['CODE'] . ' = ' . $arData['Статус']);
+                    break;
+
+                default:
+                    continue;
+            }
+        }
+
+        $res = $order->save();
+
+        unset($propertyCollection);
+        unset($order);
+
+        if(!$res->isSuccess()) {
+            Debug::dump($res->getErrorMessages());
+            return false;
+        }
+
+        return true;
+    }
+
+    private function _updateOrderFull(Order $order, array $arData)
+    {
+        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
+        $context = \Bitrix\Main\Application::getInstance()->getContext();
+        $siteId = $context->getSite();
+
+
+//        Debug::dump($arData);
+//        Debug::dump(ord(' '));
+
+        // обновляем общие данные заказа
+        $order->setField('XML_ID', $arData['ИД']);
+        $order->setField('USER_DESCRIPTION', $arData['Комментарий']);
+
+        $propertyCollection = $order->getPropertyCollection();
+
+        foreach ($propertyCollection as $property) {
+            /**
+             * @var $property PropertyValue
+             */
+
+            $arProp = $property->getProperty();
+
+            switch($arProp['CODE']) {
+                case 'EDIT_RESPONS_DT':
+                case 'EDIT_RESPONS_DT_UR':
+                    $property->setValue($expDate);
+                    break;
+
+                case 'EXPORT_DO':
+                case 'EXPORT_DO_UR':
+                    $property->setValue('NNN');
+                    break;
+
+                case 'EXT_STATUS':
+                case 'EXT_STATUS_UR':
+                    $property->setValue($arData['Статус']);
+                    break;
+
+                default:
+                    continue;
+            }
+        }
+
+        // обновляем данные товаров
+        $basket = $order->getBasket();
+
+        $basketItems = $basket->getBasketItems();
+
+        // получим текущие товары
+        $arItems = [];
+        foreach ($basketItems as $basketItem) {
+            $arCurrentItems[$basketItem->getField('PRODUCT_XML_ID')] = $basketItem;
+        }
+
+        unset($basketItem);
+
+        // сравним то, что пришло из 1С с текущими товарами
+        foreach ($arData['Товары'] as $ar1CProd) {
+            $xmlId = $ar1CProd['ИД'];
+            if (isset($arCurrentItems[$xmlId])) {
+                Debug::dump('Update');
+                Debug::dump($ar1CProd['Название']);
+                Debug::dump($ar1CProd['Количество']);
+                Debug::dump($ar1CProd['Цена']);
+
+                $arFields = [
+                    'QUANTITY' => $ar1CProd['Количество'],
+                    'CURRENCY' => \Bitrix\Currency\CurrencyManager::getBaseCurrency(),
+                    'LID' => $siteId,
+                    'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
+                    'CUSTOM_PRICE' => 'Y',
+                    'PRICE' => $ar1CProd['Цена'],
+                ];
+
+                $arCurrentItems[$xmlId]->setFields($arFields);
+
+                $basketPropertyCollection = $arCurrentItems[$xmlId]->getPropertyCollection();
+
+                // создание/обновление свойства товара
+                $basketPropertyCollection->setProperty([
+                    [
+                        'NAME' => 'Статус из 1С',
+                        'CODE' => 'STATUS_1C',
+                        'VALUE' => $ar1CProd['Статус'],
+                        'SORT' => 100,
+                    ]
+                ]);
+
+                unset($arCurrentItems[$xmlId]);
+
+            } else {
+                Debug::dump('New');
+                Debug::dump($ar1CProd);
+
+                // получим товар, если его нет, то все...
+                $arOrder = [];
+                $arFilter = [
+                    'XML_ID' => $xmlId,
+                ];
+                $arSelect = [];
+                $dbRes = \CIBlock::GetList($arOrder, $arFilter, false, false, $arSelect);
+
+                $arRes = $dbRes->GetNext();
+
+                if(!$arRes) {
+                    Debug::dump('товар не добавлен в заказ, т.к. отсутствует на сайте');
+                    Debug::dump($xmlId);
+                    Debug::dump($ar1CProd['Название']);
+                    continue;
+                }
+
+                $item = $basket->createItem('catalog', $arRes['ID']);
+
+                $item->setFields(array(
+                    'QUANTITY' => $ar1CProd['Количество'],
+                    'CURRENCY' => \Bitrix\Currency\CurrencyManager::getBaseCurrency(),
+                    'LID' => $siteId,
+                    'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
+                    'CUSTOM_PRICE' => 'Y',
+                    'PRICE' => $ar1CProd['Цена'],
+                ));
+            }
+        }
+
+        // оставшиеся товары из заказа удаляем, т.к. они не пришли из 1С
+        foreach ($arCurrentItems as $obCurrentItem) {
+            Debug::dump('Delete');
+            $obCurrentItem->delete();
+        }
+
+        $res = $order->save();
+
+        unset($propertyCollection);
+        unset($order);
+
+        if(!$res->isSuccess()) {
+            Debug::dump($res->getErrorMessages());
+            return false;
+        }
+
+        return true;
     }
 
     private function _update($arData)
     {
-        $expDate = (new \DateTime())->format('d.m.Y H:i:s');
+        $order = Order::loadByAccountNumber($arData['Номер']);
+
+        if( !$order instanceof Order) {
+            return false;
+        }
 
         // если нет товаров, то обновляем только статус заказа
+        if ( count($arData['Товары']) <= 0 ) {
+            return $this->_updateOrderStatus($order, $arData);
+        }
 
-//        $arFields = [
-//
-//        ];
-//
-//        if (!$userID) {
-////            throw new \Exception("Ошибка создания пользователя: " . $user->LAST_ERROR);
-//            Debug::dump($user->LAST_ERROR);
-//            return false;
-//        }
-//
-//        return [
-//            'ID' => $userID,
-//            'LOGIN' => $arFields['LOGIN'],
-//            'EMAIL' => $arFields['EMAIL'],
-//            'PASSWORD' => $arFields['PASSWORD'],
-//        ];
+        // если ЕСТЬ товары, то обновляем и данные заказа и товаров в нем
+        return $this->_updateOrderFull($order, $arData);
     }
 
     public function import(FtpClient $ftpClient)
@@ -104,17 +404,24 @@ class SyncerOrder implements ISyncer
             $arResult['CNT']++;
 
             if (isset($arExistedOrders[$key])) {
-                $arResult['CNT_UPD']++;
-                $this->_update($arObj);
                 Debug::dump('Update');
-                Debug::dump($arObj);
-            } else {
-                $arResult['CNT_INS']++;
-                $this->_create($arObj);
-                Debug::dump('New');
-                Debug::dump($arObj);
-            }
+                $res = $this->_update($arObj);
 
+                if(!$res) {
+                    $arResult['CNT_ERROR']++;
+                } else {
+                    $arResult['CNT_UPD']++;
+                }
+            } else {
+                Debug::dump('New');
+                $res = $this->_create($arObj);
+
+                if(!$res) {
+                    $arResult['CNT_ERROR']++;
+                } else {
+                    $arResult['CNT_INS']++;
+                }
+            }
         }
 
         // Удаляем файл на FTP

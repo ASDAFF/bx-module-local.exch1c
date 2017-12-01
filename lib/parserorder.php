@@ -34,15 +34,20 @@ class ParserOrder implements IParser
         $this->_fileDir = $dir;
     }
 
-    static public function clearStr($str, $placeholder = ' ') {
+    static public function clearStr($str, $placeholder = ' ', $isFloat = false) {
         $str = preg_replace('/\s+/', $placeholder, trim($str));
 
         $arBadChars = [
-            chr(182) => '',
-            chr(194) => '',
-            chr(160) => '',
+//            chr(182) => '',
+//            chr(194) => '',
+//            chr(160) => '',
+            ' ' => '', // это не пробел, это спецсимвол из 1С в ценах, ord показывает 194, но это не так
         ];
         $str = strtr($str, $arBadChars);
+
+        if($isFloat) {
+            $str = str_replace(',', '.', $str);
+        }
 
         return $str;
     }
@@ -97,9 +102,9 @@ class ParserOrder implements IParser
                         'ИД' => self::clearStr((string) $item->ИД),
                         'ИДСайт' => self::clearStr((string) $item->ИДСайт),
                         'Название' => self::clearStr((string) $item->Название),
-                        'Количество' => self::clearStr((string) $item->Количество),
-                        'Цена' => self::clearStr((string) $item->Цена),
-                        'Сумма' => self::clearStr((string) $item->Сумма),
+                        'Количество' => self::clearStr((string) $item->Количество, '', true),
+                        'Цена' => self::clearStr((string) $item->Цена, '', true),
+                        'Сумма' => self::clearStr((string) $item->Сумма, '', true),
                         'Статус' => self::clearStr((string) $item->Статус),
                     ];
                 }

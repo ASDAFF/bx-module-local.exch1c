@@ -46,9 +46,10 @@ class EventerOrder
                 case 'EXT_STATUS_UR':
                     if($obProp->getValue() === 'N') {
                         $obProp->setValue($orderStatusStart);
-                    } else {
-                        $obProp->setValue($orderStatusEdit);
                     }
+//                    else {
+//                        $obProp->setValue($orderStatusEdit);
+//                    }
                 break;
 
                 default:
