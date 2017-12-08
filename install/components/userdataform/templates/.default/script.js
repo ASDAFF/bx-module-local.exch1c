@@ -12,11 +12,25 @@ $(function () {
         $('body').append(template);
     }
 
+    $('.masked-phone').mask('+7(999)999-99-99');
+
     if($('#form-tx-opener').size() < 1) {
         var template = '<a id="form-tx-opener" href="#form-tx" class="fb" style="display:none;"></a>';
 
         $('body').append(template);
     }
+
+    $('.jsResetUserDataForm').on('click', function(e) {
+        $('.errors-container').html('');
+        window.location.reload(true);
+    });
+
+    $('.jsDoEditUserDataForm').on('click', function(e) {
+        e.preventDefault();
+        $('.jsSendUserDataForm').show();
+        $('.jsShowUserDataForm').hide();
+        $('html, body').animate({ scrollTop: $('#formTopMarker').offset().top }, 'slow');
+    });
 
     $('[name="jsSendUserDataForm"]').on('submit', function(e) {
         e.preventDefault();

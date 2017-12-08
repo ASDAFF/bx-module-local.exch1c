@@ -75,6 +75,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
         $arSystemInfo = [
             'NAME' => 'Служебная информация',
+            'HIDDEN' => 'Y',
             'FIELDS' => [
                 [
                     'CODE' => 'UF_EXPORT_DO',
@@ -108,10 +109,20 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
                     'READONLY' => 'Y',
                     'TMP_FIELD' => '',
                 ],
+                [
+                    'CODE' => 'UF_STATUS',
+                    'NAME' => 'Служебное статус',
+                    'TYPE' => 'text',
+                    'VALUE' => '',
+                    'READONLY' => 'Y',
+                    'TMP_FIELD' => '',
+                ],
             ]
         ];
 
         $arTmpSection = $this->_arParams['SECTIONS'];
+
+        // служебная информация
         $arTmpSection[] = $arSystemInfo;
 
         $this->setSections($arTmpSection);
@@ -257,10 +268,16 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
             foreach ($arFields as $key => $arField) {
                 $arSection['FIELDS'][$key]['VALUE'] = $this->_arUserData[$arField['CODE']];
+
+                if($arField['CODE'] == "PERSONAL_PHOTO" && $arSection['FIELDS'][$key]['VALUE']) {
+                    $arSection['FIELDS'][$key]['VALUE'] = CFile::GetFileArray($arSection['FIELDS'][$key]['VALUE']);
+                }
             }
 
             unset($arFields);
         }
+
+//        \Bitrix\Main\Diag\Debug::dump($this->_arSections);
     }
 
     /**
@@ -296,7 +313,7 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
 
         // проверим что данные подтверждены в 1С и это не повторная отправка
         if(	$this->_arUserData['UF_NEED_CONFIRM'] === 'Y' ) {
-            $arResult['msg'] = "Спасибо за регистрацию! Наш менеджер обязательно свяжется с Вами для уточнения деталей.";
+            $arResult['msg'] = "Предыдущее изменение данных еще не подтверждено. Вы не можете изменить данные, пока не подтверждены отправленные ранее.";
             echo json_encode($arResult);
             die();
         }
