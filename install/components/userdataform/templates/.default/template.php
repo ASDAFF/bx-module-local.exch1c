@@ -57,7 +57,13 @@
                 <ul class="profile-list">
 
                     <? foreach ($arUserSection['FIELDS'] as $arUserField) :?>
-                        <? if(is_array($arUserField['VALUE'])) { continue; } ?>
+                        <? if(is_array($arUserField['VALUE'])) {
+                            continue;
+                        } ?>
+                        <? if($arUserField['CODE'] == 'PERSONAL_PHOTO') {
+                            //\Bitrix\Main\Diag\Debug::dump($arUserField);
+                            continue;
+                        }?>
 
                         <li class="profile-list__item" data-code="<?=$arUserField['CODE']?>" >
                             <? if ($arUserField['TYPE'] !== 'tmp') :?>
@@ -111,32 +117,36 @@
         <div class="page-section__pc-header">Режим редактирования</div>
         <div class="pc-acdn">
 
-            <? foreach ($arResult['USER_SECTIONS'] as $arUserSection) : ?>
+            <? foreach ($arResult['USER_SECTIONS'] as $arUserSection) :
+                $hiddenSection = false;
+                if ($arUserSection['HIDDEN'] == 'Y' && !isset($_GET['DEBUG'])) {
+                    $hiddenSection = true;
+                }
+                ?>
 
-                <div class="pc-acdn__item">
+                <div class="pc-acdn__item <?=($hiddenSection) ? 'u-invisible' : '';?>">
                     <div class="pc-acdn__header">
                         <div class="pc-acdn__header-text pc-acdn__header-text--sm"><?=$arUserSection['NAME']?></div>
                     </div>
                     <div class="pc-acdn__content">
                         <? foreach ($arUserSection['FIELDS'] as $arUserField) : ?>
                             <? if ($arUserField['TYPE'] !== 'tmp') :?>
-                                <?if($arUserField['CODE'] == 'PERSONAL_PHOTO'):?>
+                                <?if( $arUserField['CODE'] == 'PERSONAL_PHOTO'):?>
                                     <input type="<?=$arUserField['TYPE']?>"
                                            name="<?=$arUserField['CODE']?>"
                                            value="<?=$arUserField['VALUE']?>"
                                            id="upload-avatar"
                                            class="u-invisible"
                                     >
-                                <?else:?>
+                                <? else : ?>
                                     <div class="pc-acdn__input-group">
                                         <span class="input-label"><?=$arUserField['NAME']?></span>
                                         <input type="<?=$arUserField['TYPE']?>"
                                                name="<?=$arUserField['CODE']?>"
                                                value="<?=$arUserField['VALUE']?>"
                                                <?=($arUserField['CODE'] == 'PERSONAL_PHOTO') ? 'id="upload-avatar"' : ''; ?>
-                                               class="pc-input pc-input--lg pc-input--edit
+                                               class="pc-input pc-input--lg <?=($arUserField['READONLY'] == 'Y') ? '' : 'pc-input--edit'?>
                                                       <?=($arUserField['CODE'] == 'PERSONAL_PHONE') ? 'masked-phone' : ''; ?>
-                                                      <?=($arUserField['CODE'] == 'PERSONAL_PHOTO') ? 'u-invisible' : ''; ?>
                                                       "
                                             <?=($arUserField['READONLY'] == 'Y') ? 'readonly' : ''?>>
                                     </div>
