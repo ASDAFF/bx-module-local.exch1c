@@ -362,6 +362,41 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
             die();
         }
 
+        // грузим аватар
+        if($_FILES["PERSONAL_PHOTO"]["size"] > 1024*3*1024)
+        {
+            echo ("Размер файла превышает три мегабайта");
+            exit;
+        }
+
+        // Проверяем загружен ли файл
+//        \Bitrix\Main\Diag\Debug::dump($_FILES);
+        $fid = 0;
+        if(is_uploaded_file($_FILES["PERSONAL_PHOTO"]["tmp_name"]))
+        {
+//            \Bitrix\Main\Diag\Debug::dump('is_uploaded_file');
+            // Если файл загружен успешно, перемещаем его
+            // из временной директории в конечную
+
+            if(!is_dir($_SERVER["DOCUMENT_ROOT"]."/upload/tmp/")) {
+                mkdir($_SERVER["DOCUMENT_ROOT"]."/upload/tmp/", "755");
+            }
+
+            $moveres = move_uploaded_file($_FILES["PERSONAL_PHOTO"]["tmp_name"], $_SERVER["DOCUMENT_ROOT"]."/upload/tmp/".$_FILES["PERSONAL_PHOTO"]["name"]);
+//            \Bitrix\Main\Diag\Debug::dump($moveres);
+            $arFile = CFile::MakeFileArray($_SERVER["DOCUMENT_ROOT"]."/upload/tmp/".$_FILES["PERSONAL_PHOTO"]["name"]);
+            $arFile["MODULE_ID"] = "main";
+            $fid = CFile::SaveFile($arFile, "main");
+
+//            \Bitrix\Main\Diag\Debug::dump($fid);
+
+            if (intval($fid)>0)
+            {
+                $arPhoto = CFile::MakeFileArray($fid);
+                $arFieldsForEdit['PERSONAL_PHOTO'] = $arPhoto;
+            }
+        }
+
         $user = new CUser();
 
         $arFieldsForEdit['UF_EXPORT_DO'] = 'Y';
@@ -369,7 +404,15 @@ class LocalExch1CUserDataForm extends CBitrixComponent {
         $arFieldsForEdit['UF_EDIT_REQUEST_DT'] = (new DateTime())->format('d.m.Y H:i:s');
         $arFieldsForEdit['UF_EDIT_RESPONS_DT'] = '';
 
+//        \Bitrix\Main\Diag\Debug::dump($arFieldsForEdit);
+
         $user->Update(self::_user()->GetID(), $arFieldsForEdit);
+
+        if (intval($fid)>0)
+        {
+            CFile::Delete($fid);
+            unlink($_SERVER["DOCUMENT_ROOT"]."/upload/tmp/".$_FILES["PERSONAL_PHOTO"]["name"]);
+        }
 
         $arResult = array(
             'hasError' => false,

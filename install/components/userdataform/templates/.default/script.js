@@ -36,7 +36,8 @@ $(function () {
         e.preventDefault();
 
         var $this = $(this);
-        var data = $this.serializeArray();
+        //var data = $this.serializeArray();
+        var data = new FormData($this[0]);
         var url = $this.attr('action');
         var valid = true;
 
@@ -58,6 +59,12 @@ $(function () {
             type: "post",
             dataType: 'json',
             data: data,
+
+            processData: false,
+            contentType: false,
+            async: false,
+            cache: false,
+
             success: function(obj) {
 
                 if (obj['hasError']) {

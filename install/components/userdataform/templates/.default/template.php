@@ -102,7 +102,9 @@
 
 <form method="post" name="jsSendUserDataForm" action="" enctype="multipart/form-data" style="display:none;" class="jsSendUserDataForm">
     <input type="hidden" name="formId" value="UserDataForm"/>
+    <?/*?>
     <input type="file" class="u-invisible" id="upload-avatar">
+    <?//*/?>
     <?=bitrix_sessid_post();?>
 
     <div class="page-section page-section--white-bg helper helper__pb-52px page-section__edit-profile">
@@ -110,28 +112,43 @@
         <div class="pc-acdn">
 
             <? foreach ($arResult['USER_SECTIONS'] as $arUserSection) : ?>
-            <div class="pc-acdn__item">
-                <div class="pc-acdn__header">
-                    <div class="pc-acdn__header-text pc-acdn__header-text--sm"><?=$arUserSection['NAME']?></div>
-                </div>
-                <div class="pc-acdn__content">
-                    <? foreach ($arUserSection['FIELDS'] as $arUserField) : ?>
-                        <? if ($arUserField['TYPE'] !== 'tmp') :?>
-                            <div class="pc-acdn__input-group">
-                                <span class="input-label"><?=$arUserField['NAME']?></span>
-                                <input type="<?=$arUserField['TYPE']?>"
-                                       name="<?=$arUserField['CODE']?>"
-                                       value="<?=$arUserField['VALUE']?>"
-                                       class="pc-input pc-input--lg pc-input--edit <?=($arUserField['CODE'] == 'PERSONAL_PHONE') ? 'masked-phone' : ''; ?>"
-                                    <?=($arUserField['READONLY'] == 'Y') ? 'readonly' : ''?>>
-                            </div>
-                        <? elseif($arUserField['VALUE']) : /*?>
-                            <div class="editreqfild"><span>Запрос на изменение:</span> <?=$arUserField['VALUE']?></div>
-                        <?*/ endif; ?>
 
-                    <? endforeach; ?>
+                <div class="pc-acdn__item">
+                    <div class="pc-acdn__header">
+                        <div class="pc-acdn__header-text pc-acdn__header-text--sm"><?=$arUserSection['NAME']?></div>
+                    </div>
+                    <div class="pc-acdn__content">
+                        <? foreach ($arUserSection['FIELDS'] as $arUserField) : ?>
+                            <? if ($arUserField['TYPE'] !== 'tmp') :?>
+                                <?if($arUserField['CODE'] == 'PERSONAL_PHOTO'):?>
+                                    <input type="<?=$arUserField['TYPE']?>"
+                                           name="<?=$arUserField['CODE']?>"
+                                           value="<?=$arUserField['VALUE']?>"
+                                           id="upload-avatar"
+                                           class="u-invisible"
+                                    >
+                                <?else:?>
+                                    <div class="pc-acdn__input-group">
+                                        <span class="input-label"><?=$arUserField['NAME']?></span>
+                                        <input type="<?=$arUserField['TYPE']?>"
+                                               name="<?=$arUserField['CODE']?>"
+                                               value="<?=$arUserField['VALUE']?>"
+                                               <?=($arUserField['CODE'] == 'PERSONAL_PHOTO') ? 'id="upload-avatar"' : ''; ?>
+                                               class="pc-input pc-input--lg pc-input--edit
+                                                      <?=($arUserField['CODE'] == 'PERSONAL_PHONE') ? 'masked-phone' : ''; ?>
+                                                      <?=($arUserField['CODE'] == 'PERSONAL_PHOTO') ? 'u-invisible' : ''; ?>
+                                                      "
+                                            <?=($arUserField['READONLY'] == 'Y') ? 'readonly' : ''?>>
+                                    </div>
+                                <? endif; ?>
+                            <? elseif($arUserField['VALUE']) : /*?>
+                                <div class="editreqfild"><span>Запрос на изменение:</span> <?=$arUserField['VALUE']?></div>
+                            <?*/ endif; ?>
+
+                        <? endforeach; ?>
+                    </div>
                 </div>
-            </div>
+
             <? endforeach; ?>
         </div>
 
