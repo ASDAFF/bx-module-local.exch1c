@@ -38,9 +38,12 @@ class ParserUser implements IParser
         $str = preg_replace('/\s+/', $placeholder, trim($str));
 
         $arBadChars = [
-            chr(182) => '',
-            chr(194) => '',
-            chr(160) => '',
+            // chr(182) => '',
+            // chr(194) => '',
+            // chr(160) => '',
+            ' '=> ' ',
+            ' '=> ' ',
+            ' '=> ' ',
         ];
         $str = strtr($str, $arBadChars);
 
@@ -70,9 +73,9 @@ class ParserUser implements IParser
             $arClient = [
                 'Код' => $kod,
                 'ВидКонтрагента' => self::clearStr((string) $xmlClient->ВидКонтрагента),
-                'НаименованиеЮр' => self::clearStr((string) $xmlClient->НаименованиеЮр),
-                'НаименованиеРабочее' => self::clearStr((string) $xmlClient->НаименованиеРабочее),
-                'ФИОДиректора' => self::clearStr((string) $xmlClient->ФИОДиректора),
+                'НаименованиеЮр' => (string) $xmlClient->НаименованиеЮр,
+                'НаименованиеРабочее' => (string) $xmlClient->НаименованиеРабочее,
+                'ФИОДиректора' => (string) $xmlClient->ФИОДиректора,
                 'Регион' => self::clearStr((string) $xmlClient->Регион),
                 'Город' => self::clearStr((string) $xmlClient->Город),
                 'ЮрАдрес' => self::clearStr((string) $xmlClient->ЮрАдрес),
