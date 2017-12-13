@@ -351,14 +351,27 @@ class SyncerOrder implements ISyncer
 
                 $item = $basket->createItem('catalog', $arRes['ID']);
 
-                $item->setFields(array(
+                $item->setFields([
+                    'NAME' => $ar1CProd['Название'],
                     'QUANTITY' => $ar1CProd['Количество'],
                     'CURRENCY' => \Bitrix\Currency\CurrencyManager::getBaseCurrency(),
                     'LID' => $siteId,
                     'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
                     'CUSTOM_PRICE' => 'Y',
                     'PRICE' => $ar1CProd['Цена'],
-                ));
+                ]);
+
+                $basketPropertyCollection = $item->getPropertyCollection();
+
+                // создание/обновление свойства товара
+                $basketPropertyCollection->setProperty([
+                    [
+                        'NAME' => 'Статус из 1С',
+                        'CODE' => 'STATUS_1C',
+                        'VALUE' => $ar1CProd['Статус'],
+                        'SORT' => 100,
+                    ]
+                ]);
             }
         }
 
