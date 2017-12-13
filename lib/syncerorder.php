@@ -478,7 +478,7 @@ class SyncerOrder implements ISyncer
         }
 
         // Удаляем файл на FTP
-        //$ftpClient->rmFtpImportFile();
+        $ftpClient->rmFtpImportFile();
 
         // лог
         $arResultMsg['msg'] = 'Всего записей: ' . $arResult['CNT']
