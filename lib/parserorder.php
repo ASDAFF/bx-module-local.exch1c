@@ -70,7 +70,7 @@ class ParserOrder implements IParser
         $arXmlIds = [];
         $arAccountNumbers = [];
 
-        $xmlObjects = $xml->ЗаказКлиента;
+        $xmlObjects = $xml->СтатусЗаказа;
 
         foreach ($xmlObjects as $xmlObject) {
             $xmlId = self::clearStr((string) $xmlObject->ИД, '');
@@ -86,7 +86,7 @@ class ParserOrder implements IParser
                 'Номер' => $accountNumber,
                 'КодКлиента' => self::clearStr((string) $xmlObject->КодКлиента),
                 'ДатаСоздания' => self::clearStr((string) $xmlObject->ДатаСоздания),
-                'Сумма' => self::clearStr((string) $xmlObject->Сумма),
+                'Сумма' => self::clearStr((string) $xmlObject->СуммаДокумента),
                 'Комментарий' => self::clearStr((string) $xmlObject->Комментарий),
                 'Статус' => self::clearStr((string) $xmlObject->Статус),
                 'Товары' => [],

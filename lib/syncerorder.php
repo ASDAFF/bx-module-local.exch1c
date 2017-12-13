@@ -31,12 +31,19 @@ class SyncerOrder implements ISyncer
         Loader::includeModule('sale');
         $expDate = (new \DateTime())->format('d.m.Y H:i:s');
 
-        Debug::dump($arData);
+//        Debug::dump($arData);
 
         // проверим наличие пользователя
         $arUser = \CUser::GetByLogin($arData['КодКлиента'])->Fetch();
 
         if(!$arUser) {
+            Tables\SyncHistoryTable::add([
+                'name' => 'order-create',
+                'operation' => 'import',
+                'result' => 'error',
+                'msg' => 'Отсутствует клиент с логином ['.$arData['КодКлиента'].']',
+            ]);
+
             return false;
         }
 
@@ -58,13 +65,19 @@ class SyncerOrder implements ISyncer
 
         $arProds = [];
         while($arRes = $dbRes->GetNext()) {
-            Debug::dump($arRes);
+//            Debug::dump($arRes);
             $arProds[] = $arRes;
         }
 
         if(count($arProds) <= 0) {
-            Debug::dump($arFilter);
-            Debug::dump("Товары не найдены");
+//            Debug::dump($arFilter);
+//            Debug::dump("Товары не найдены");
+            Tables\SyncHistoryTable::add([
+                'name' => 'order-create',
+                'operation' => 'import',
+                'result' => 'error',
+                'msg' => 'Отсутствуют товары в заказе',
+            ]);
             return false;
         }
 
@@ -147,7 +160,14 @@ class SyncerOrder implements ISyncer
 
         if(!$result->isSuccess()) {
             foreach ($result->getErrorMessages() as $errorMessage) {
-                Debug::dump($errorMessage);
+//                Debug::dump($errorMessage);
+
+                Tables\SyncHistoryTable::add([
+                    'name' => 'order-create',
+                    'operation' => 'import',
+                    'result' => 'error',
+                    'msg' => $errorMessage,
+                ]);
             }
 
             return false;
@@ -198,7 +218,13 @@ class SyncerOrder implements ISyncer
         unset($order);
 
         if(!$res->isSuccess()) {
-            Debug::dump($res->getErrorMessages());
+//            Debug::dump($res->getErrorMessages());
+            Tables\SyncHistoryTable::add([
+                'name' => 'order-updatestatus',
+                'operation' => 'import',
+                'result' => 'error',
+                'msg' => $res->getErrorMessages(),
+            ]);
             return false;
         }
 
@@ -314,6 +340,12 @@ class SyncerOrder implements ISyncer
                     Debug::dump('товар не добавлен в заказ, т.к. отсутствует на сайте');
                     Debug::dump($xmlId);
                     Debug::dump($ar1CProd['Название']);
+                    Tables\SyncHistoryTable::add([
+                        'name' => 'order-updatestatus',
+                        'operation' => 'import',
+                        'result' => 'error',
+                        'msg' => 'товар не добавлен в заказ, т.к. отсутствует на сайте ['.$ar1CProd['Название'].'] ['.$xmlId.']',
+                    ]);
                     continue;
                 }
 
@@ -343,6 +375,12 @@ class SyncerOrder implements ISyncer
 
         if(!$res->isSuccess()) {
             Debug::dump($res->getErrorMessages());
+            Tables\SyncHistoryTable::add([
+                'name' => 'order-updatefull',
+                'operation' => 'import',
+                'result' => 'error',
+                'msg' => $res->getErrorMessages(),
+            ]);
             return false;
         }
 
@@ -404,7 +442,7 @@ class SyncerOrder implements ISyncer
             $arResult['CNT']++;
 
             if (isset($arExistedOrders[$key])) {
-                Debug::dump('Update');
+//                Debug::dump('Update');
                 $res = $this->_update($arObj);
 
                 if(!$res) {
@@ -413,7 +451,7 @@ class SyncerOrder implements ISyncer
                     $arResult['CNT_UPD']++;
                 }
             } else {
-                Debug::dump('New');
+//                Debug::dump('New');
                 $res = $this->_create($arObj);
 
                 if(!$res) {
