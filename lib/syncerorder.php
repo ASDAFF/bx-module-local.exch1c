@@ -291,9 +291,12 @@ class SyncerOrder implements ISyncer
         // сравним то, что пришло из 1С с текущими товарами
         foreach ($arData['Товары'] as $ar1CProd) {
             $xmlId = $ar1CProd['ИД'];
+
+            Debug::dump($xmlId);
+            Debug::dump($ar1CProd['Название']);
+
             if (isset($arCurrentItems[$xmlId])) {
                 Debug::dump('Update');
-                Debug::dump($ar1CProd['Название']);
                 Debug::dump($ar1CProd['Количество']);
                 Debug::dump($ar1CProd['Цена']);
 
@@ -324,7 +327,6 @@ class SyncerOrder implements ISyncer
 
             } else {
                 Debug::dump('New');
-                Debug::dump($ar1CProd);
 
                 // получим товар, если его нет, то все...
                 $arOrder = [];
@@ -332,14 +334,12 @@ class SyncerOrder implements ISyncer
                     'XML_ID' => $xmlId,
                 ];
                 $arSelect = [];
-                $dbRes = \CIBlock::GetList($arOrder, $arFilter, false, false, $arSelect);
+                $dbRes = \CIBlockElement::GetList($arOrder, $arFilter, false, false, $arSelect);
 
                 $arRes = $dbRes->GetNext();
 
                 if(!$arRes) {
-                    Debug::dump('товар не добавлен в заказ, т.к. отсутствует на сайте');
-                    Debug::dump($xmlId);
-                    Debug::dump($ar1CProd['Название']);
+                    Debug::dump('no product on site');
                     Tables\SyncHistoryTable::add([
                         'name' => 'order-updatestatus',
                         'operation' => 'import',
@@ -364,6 +364,8 @@ class SyncerOrder implements ISyncer
 
         // оставшиеся товары из заказа удаляем, т.к. они не пришли из 1С
         foreach ($arCurrentItems as $obCurrentItem) {
+            Debug::dump($obCurrentItem->getField('PRODUCT_XML_ID'));
+            Debug::dump($obCurrentItem->getField('NAME'));
             Debug::dump('Delete');
             $obCurrentItem->delete();
         }
