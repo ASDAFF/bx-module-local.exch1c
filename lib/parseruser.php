@@ -42,7 +42,6 @@ class ParserUser implements IParser
             // chr(194) => '',
             // chr(160) => '',
             ' '=> ' ',
-            ' '=> ' ',
             ' '=> ' ',
         ];
         $str = strtr($str, $arBadChars);

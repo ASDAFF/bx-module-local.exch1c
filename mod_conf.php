@@ -169,6 +169,17 @@ $arEmailTypes = [
 #LINK# - Ссылка
         "
     ],
+
+    [
+        "EVENT_NAME"  => "LOCALEXCH1C_EDITCONFIRM",
+        "NAME"        => "Уведомление об изменении данных",
+        "LID"         => "ru",
+        "SORT"        => 100,
+        "DESCRIPTION" => "
+#LOGIN# - Логин Пользователя
+#EMAIL# - Почта
+        "
+    ],
 ];
 
 /**
@@ -218,6 +229,21 @@ $arEmailTmpls = [
         "BODY_TYPE" => "html",
         "MESSAGE" => "
 Пользователь <b>#FIO#</b> отправил запрос на изменение информации. Ссылка для просмотра данных: <a href='#LINK#'>#LINK#</a>
+",
+    ],
+
+    [
+        "ACTIVE" => "Y",
+        "EVENT_NAME" => "LOCALEXCH1C_EDITCONFIRM",
+        "EMAIL_FROM" => "#DEFAULT_EMAIL_FROM#",
+        "EMAIL_TO" => "#EMAIL#",
+        "BCC" => "",
+        "SUBJECT" => "Подтверждение изменения данных на сайте #SITE_NAME#",
+        "BODY_TYPE" => "html",
+        "MESSAGE" => "
+Добрый день.<br><br>
+Ваши данные усешно прошли проверку на сайте \"#SITE_NAME#\".<br><br>
+
 ",
     ],
 ];

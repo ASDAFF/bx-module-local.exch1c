@@ -189,6 +189,7 @@ class SyncerUser implements ISyncer
         }
 
         $arNewUsers = [];
+        $arUpdUsers = [];
 
         foreach ($arData['OBJECTS'] as $arObj) {
             $arResult['CNT']++;
@@ -217,6 +218,7 @@ class SyncerUser implements ISyncer
                 $arTmpUser = $this->_update($arObj);
 
                 if($arTmpUser) {
+                    $arUpdUsers[] = $arTmpUser;
                     $arResult['CNT_UPD']++;
                 } else {
                     $arResult['CNT_ERROR']++;
@@ -229,6 +231,9 @@ class SyncerUser implements ISyncer
 
         // отправить уведомления новым пользователям
         $this->sendEmailForNewUsers($arNewUsers);
+
+        // отправить уведомления обновленным пользователям
+        $this->sendEmailForUpdUsers($arUpdUsers);
 
         // лог
         $arResultMsg['msg'] = 'Всего записей: ' . $arResult['CNT']
@@ -386,6 +391,16 @@ class SyncerUser implements ISyncer
 
         foreach ($arUsers as $arUser) {
             $tmplName = \Bitrix\Main\Config\Option::get(strtolower($arModConf['name']), $arModConf['name'].'_EMAIL_TMPL_REGCONFIRM');
+            \CEvent::Send($tmplName, $this->siteId, $arUser);
+        }
+    }
+
+    protected function sendEmailForUpdUsers($arUsers) {
+
+        $arModConf = include __DIR__ . '/../mod_conf.php';
+
+        foreach ($arUsers as $arUser) {
+            $tmplName = \Bitrix\Main\Config\Option::get(strtolower($arModConf['name']), $arModConf['name'].'_EMAIL_TMPL_EDITCONFIRM');
             \CEvent::Send($tmplName, $this->siteId, $arUser);
         }
     }

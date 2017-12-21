@@ -18,5 +18,6 @@ $local_exch1c_default_option = array(
     $arModConf['name'] . '_EMAIL_TMPL_REGCONFIRM' => "LOCALEXCH1C_REGCONFIRM",
     $arModConf['name'] . '_EMAIL_TMPL_REGREQUEST' => "LOCALEXCH1C_REGREQUEST",
     $arModConf['name'] . '_EMAIL_TMPL_EDITREQUEST' => "LOCALEXCH1C_EDITREQUEST",
+    $arModConf['name'] . '_EMAIL_TMPL_EDITCONFIRM' => "LOCALEXCH1C_EDITCONFIRM",
 );
 ?>
