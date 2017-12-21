@@ -77,6 +77,11 @@ class FtpClient
         $this->_ftpServer->turnPassive();
         ftp_raw($this->_ftpServer->getSession(), 'OPTS UTF8 ON');
 
+        // создание папки на сервере в случае ее отсутствия
+        if (!$this->_hasServerDir()) {
+            $this->_createServerDir();
+        }
+
     }
 
     public function setParser(IParser $parser)
@@ -109,7 +114,13 @@ class FtpClient
 
     private function _createServerDir()
     {
-        return mkdir($this->getServerDir(), '755');
+        $isOk = mkdir($this->getServerDir(), 0777);
+
+        if (!$isOk) {
+            throw new \Exception('Ошибка при попытке создания директории на сервере');
+        }
+
+        return $isOk;
     }
 
     public function syncFile()
@@ -122,11 +133,6 @@ class FtpClient
 
         if(!$this->ftpFileExists($fileName)) {
             return false;
-        }
-
-        // получение файла на сервер
-        if (!$this->_hasServerDir()) {
-            $this->_createServerDir();
         }
 
         $filePathRemote = $this->_dirFtp . DIRECTORY_SEPARATOR . $fileName;
@@ -166,6 +172,9 @@ class FtpClient
         $filePathLocal = $this->getServerDir() . $fileName;
 
         $fileFactory = FileFactory::build($this->_ftpServer);
+
+        // \Bitrix\Main\Diag\Debug::dump($filePathLocal);
+        // \Bitrix\Main\Diag\Debug::dump($filePathRemote);
 
         return $fileFactory->upload($filePathLocal, $filePathRemote);
 
