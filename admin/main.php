@@ -27,6 +27,7 @@ $aTabs = [];
 $aTabs[] = array("DIV" => $module_id."_users", "TAB" => 'Обмен контрагентами', "TITLE" => 'Тестирование обмена контрагентами', 'INC' => 'users.php');
 $aTabs[] = array("DIV" => $module_id."_stores", "TAB" => 'Обмен остатками', "TITLE" => 'Тестирование обмена остатками', 'INC' => 'stores.php');
 $aTabs[] = array("DIV" => $module_id."_orders", "TAB" => 'Обмен заказами', "TITLE" => 'Тестирование обмена заказами', 'INC' => 'orders.php');
+$aTabs[] = array("DIV" => $module_id."_statistics", "TAB" => 'Обмен статистикой заказов', "TITLE" => 'Тестирование обмена статистикой заказов', 'INC' => 'statistics.php');
 $tabControl = new \CAdminTabControl("exch1cTabControl", $aTabs, true, true);
 
 $tabControl->Begin();
