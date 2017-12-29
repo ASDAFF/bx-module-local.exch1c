@@ -88,6 +88,7 @@ class SyncerOrder implements ISyncer
         $order = Order::create($this->siteId, $userId);
         $order->setPersonTypeId(2); // юр.лицо
         $order->setField('CURRENCY', $currencyCode);
+        $order->setField('XML_ID', $arData['ИД']);
         if ($arData['Комментарий']) {
             $order->setField('USER_DESCRIPTION', $arData['Комментарий']); // Устанавливаем поля комментария покупателя
         }
@@ -105,6 +106,7 @@ class SyncerOrder implements ISyncer
                 'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
                 'CUSTOM_PRICE' => 'Y',
                 'PRICE' => $ar1CProds[$arProd['XML_ID']]['Цена'],
+                'PRODUCT_XML_ID' => $arProd['XML_ID'],
             ));
         }
 
@@ -307,6 +309,7 @@ class SyncerOrder implements ISyncer
                     'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
                     'CUSTOM_PRICE' => 'Y',
                     'PRICE' => $ar1CProd['Цена'],
+                    'PRODUCT_XML_ID' => $xmlId,
                 ];
 
                 $arCurrentItems[$xmlId]->setFields($arFields);
@@ -359,6 +362,7 @@ class SyncerOrder implements ISyncer
                     'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
                     'CUSTOM_PRICE' => 'Y',
                     'PRICE' => $ar1CProd['Цена'],
+                    'PRODUCT_XML_ID' => $xmlId,
                 ]);
 
                 $basketPropertyCollection = $item->getPropertyCollection();
