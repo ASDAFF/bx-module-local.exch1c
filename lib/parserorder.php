@@ -89,6 +89,9 @@ class ParserOrder implements IParser
                 'Сумма' => self::clearStr((string) $xmlObject->СуммаДокумента),
                 'Комментарий' => self::clearStr((string) $xmlObject->Комментарий),
                 'Статус' => self::clearStr((string) $xmlObject->Статус),
+//                'Предоплата' => self::clearStr((string) $xmlObject->Предоплата),
+//                'Остаток' => self::clearStr((string) $xmlObject->Остаток),
+//                'ДатаИсполнения' => self::clearStr((string) $xmlObject->ДатаИсполнения),
                 'Товары' => [],
             ];
 
@@ -106,6 +109,7 @@ class ParserOrder implements IParser
                         'Цена' => self::clearStr((string) $item->Цена, '', true),
                         'Сумма' => self::clearStr((string) $item->Сумма, '', true),
                         'Статус' => self::clearStr((string) $item->Статус),
+//                        'ДатаИсполнения' => self::clearStr((string) $item->ДатаИсполнения),
                     ];
                 }
             }
@@ -144,6 +148,18 @@ class ParserOrder implements IParser
                 ? $arRow['PROPS']['EXT_STATUS']
                 : $arRow['PROPS']['EXT_STATUS_UR'];
 
+//            $orderPrepay = $arRow['PROPS']['PREPAY']
+//                ? $arRow['PROPS']['PREPAY']
+//                : $arRow['PROPS']['PREPAY_UR'];
+//
+//            $orderOstatok = $arRow['PROPS']['OSTATOK']
+//                ? $arRow['PROPS']['OSTATOK']
+//                : $arRow['PROPS']['OSTATOK_UR'];
+//
+//            $orderFinishDate = $arRow['PROPS']['FINISH_DATE']
+//                ? $arRow['PROPS']['FINISH_DATE']
+//                : $arRow['PROPS']['FINISH_DATE_UR'];
+
             $orderNode = $rootNode->addChild('v8:DocumentObject.ЗаказКлиента', null, $NS['v8']);
             $orderNode->addChild('v8:ИД', $arRow['XML_ID']);
             $orderNode->addChild('v8:ИДСайт', $arRow['ID']);
@@ -153,6 +169,9 @@ class ParserOrder implements IParser
             $orderNode->addChild('v8:Сумма', $arRow['PRICE']);
             $orderNode->addChild('v8:Комментарий', $arRow['COMMENTS']);
             $orderNode->addChild('v8:Статус', $orderStatus);
+//            $orderNode->addChild('v8:Предоплата', $orderPrepay);
+//            $orderNode->addChild('v8:Остаток', $orderOstatok);
+//            $orderNode->addChild('v8:ДатаИсполнения', $orderFinishDate);
 
             $prodsNode = $orderNode->addChild('v8:Товары', null);
             foreach($arRow['ITEMS'] as $arProd) {
@@ -167,6 +186,7 @@ class ParserOrder implements IParser
                 $prodNode->addChild('v8:Цена', $arProd['PRICE']);
                 $prodNode->addChild('v8:Сумма', $sum);
                 $prodNode->addChild('v8:Статус', $arProd['EXCH_STATUS']);
+//                $prodNode->addChild('v8:ДатаИсполнения', $arProd['FINISH_DATE']);
             }
         }
 
