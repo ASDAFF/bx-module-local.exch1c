@@ -383,6 +383,54 @@ $arSaleOrderProps = [
         "CODE" => "EXT_STATUS_UR",
     ],
 
+    [
+        "PERSON_TYPE_NAME" => 'Физическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное дата исполнения",
+        "TYPE" => "TEXT",
+        "CODE" => "FINISH_DATE",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное дата исполнения",
+        "TYPE" => "TEXT",
+        "CODE" => "FINISH_DATE_UR",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Физическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное предоплата",
+        "TYPE" => "TEXT",
+        "CODE" => "PREPAY",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное предоплата",
+        "TYPE" => "TEXT",
+        "CODE" => "PREPAY_UR",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Физическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное остаток",
+        "TYPE" => "TEXT",
+        "CODE" => "OSTATOK",
+    ],
+
+    [
+        "PERSON_TYPE_NAME" => 'Юридическое лицо',
+        "PROPS_GROUP_NAME" => 'Служебные',
+        "NAME" => "Служебное остаток",
+        "TYPE" => "TEXT",
+        "CODE" => "OSTATOK_UR",
+    ],
+
 ];
 
 $arConfig = array_merge($arConfCommon, [

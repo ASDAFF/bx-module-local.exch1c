@@ -806,6 +806,9 @@ class SyncerStatistic implements ISyncer
             'EDIT_REQUEST_DT',
             'EDIT_RESPONS_DT',
             'EXT_STATUS',
+//            'FINISH_DATE',
+//            'PREPAY',
+//            'OSTATOK',
 
             'EXCH_STATUS_UR',
             'EXPORT_DO_UR',
@@ -813,6 +816,9 @@ class SyncerStatistic implements ISyncer
             'EDIT_REQUEST_DT_UR',
             'EDIT_RESPONS_DT_UR',
             'EXT_STATUS_UR',
+//            'FINISH_DATE_UR',
+//            'PREPAY_UR',
+//            'OSTATOK_UR',
 
             'EMAIL'
         ];
