@@ -21,6 +21,16 @@ class SyncerStore implements ISyncer
 
     public function import(FtpClient $ftpClient)
     {
+        // проверим что нет ранее запущенного импорта
+        $fileFlagPath = $_SERVER["DOCUMENT_ROOT"] . '/IS_IMPORT_STORES';
+
+        if (file_exists($fileFlagPath)) {
+            return;
+        }
+
+        // создадим файл-флаг текущей выгрузки
+        file_put_contents($fileFlagPath, date('Y.d.m H:i:s'));
+
         if(!\Bitrix\Main\Loader::includeModule('iblock')
             || !\Bitrix\Main\Loader::includeModule('catalog')) {
 
@@ -90,6 +100,9 @@ class SyncerStore implements ISyncer
             'result' => $arResultMsg['type'],
             'msg' => $arResultMsg['msg'],
         ]);
+
+        // удалим файл-флаг статуса выгрузки
+        unlink($fileFlagPath);
 
         return $arResult;
     }
