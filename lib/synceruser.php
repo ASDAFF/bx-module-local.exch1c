@@ -175,11 +175,18 @@ class SyncerUser implements ISyncer
         $fileFlagPath = $_SERVER["DOCUMENT_ROOT"] . '/IS_IMPORT_USERS';
 
         if (file_exists($fileFlagPath)) {
-            return;
+            $lastDate = strtotime(file_get_contents($fileFlagPath));
+
+            if ($lastDate + 60*60 >= time() && $lastDate - 60*60 <= time()) {
+                return false;
+            } else {
+                unlink($fileFlagPath);
+            }
+
         }
 
         // создадим файл-флаг текущей выгрузки
-        file_put_contents($fileFlagPath, date('Y.d.m H:i:s'));
+        file_put_contents($fileFlagPath, date('Y-m-d H:i:s'));
 
         $arResultMsg = [
             'type' => 'success',
@@ -196,6 +203,9 @@ class SyncerUser implements ISyncer
         ];
 
         if (!$arData) {
+            // удалим файл-флаг статуса выгрузки
+            unlink($fileFlagPath);
+
             return $arResult;
         }
 

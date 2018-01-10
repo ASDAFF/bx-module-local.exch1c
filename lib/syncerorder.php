@@ -430,7 +430,14 @@ class SyncerOrder implements ISyncer
         $fileFlagPath = $_SERVER["DOCUMENT_ROOT"] . '/IS_IMPORT_ORDERS';
 
         if (file_exists($fileFlagPath)) {
-            return;
+            $lastDate = strtotime(file_get_contents($fileFlagPath));
+
+            if ($lastDate + 60*60 >= time() && $lastDate - 60*60 <= time()) {
+                return false;
+            } else {
+                unlink($fileFlagPath);
+            }
+
         }
 
         // создадим файл-флаг текущей выгрузки
@@ -451,6 +458,8 @@ class SyncerOrder implements ISyncer
         ];
 
         if (!$arData) {
+            unlink($fileFlagPath);
+
             return $arResult;
         }
 
