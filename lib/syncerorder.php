@@ -569,6 +569,8 @@ class SyncerOrder implements ISyncer
      */
     private function getOrderForExportIDs()
     {
+        Loader::includeModule('sale');
+        
         $arOrder = [];
         $arFilter = [
             "CODE" => 'EXPORT_DO_UR',
