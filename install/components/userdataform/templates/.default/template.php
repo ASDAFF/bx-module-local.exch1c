@@ -144,8 +144,9 @@
                                         <input type="<?=$arUserField['TYPE']?>"
                                                name="<?=$arUserField['CODE']?>"
                                                value="<?=$arUserField['VALUE']?>"
+                                               data-oldvalue="<?=$arUserField['VALUE']?>"
                                                <?=($arUserField['CODE'] == 'PERSONAL_PHOTO') ? 'id="upload-avatar"' : ''; ?>
-                                               class="pc-input pc-input--lg <?=($arUserField['READONLY'] == 'Y') ? '' : 'pc-input--edit'?>
+                                               class="pc-input pc-input--lg <?=($arUserField['READONLY'] == 'Y') ? '' : 'pc-input--edit jsEditable'?>
                                                       <?=($arUserField['CODE'] == 'PERSONAL_PHONE') ? 'masked-phone' : ''; ?>
                                                       "
                                             <?=($arUserField['READONLY'] == 'Y') ? 'readonly' : ''?>>
@@ -172,3 +173,25 @@
     </div> <!-- /.page-section -->
 
 </form>
+
+<div id="form-confirm-lk-data" class="order-popup" style="display:none;">
+    <div class="order-popup__outer">
+        <div class="order-popup__text"></div>
+        <ul class="order-popup__list"></ul>
+        <div class="order-popup__btn jsBtnConfirm">
+            <a href="javascript:void(0);" onclick="return false;" class="call-btn call-btn--align-center">
+                <span>Подтвердить</span>
+                <i class="call-btn__arrow call-btn__arrow--left-orient"></i>
+            </a>
+        </div>
+        <br>
+        <br>
+        <div class="order-popup__btn jsBtnClose">
+            <a class="call-btn call-btn--align-center actionFancyClose actionFancyCloseAndReload" href="javascript:void(0);" onclick="return false;">
+                <span>Отмена</span>
+                <i class="call-btn__arrow call-btn__arrow--left-orient"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<a id="form-confirm-lk-data-opener" href="#form-confirm-lk-data" class="fb" style="display:none;"></a>

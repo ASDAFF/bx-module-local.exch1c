@@ -37,8 +37,6 @@ $(function () {
 
         var $this = $(this);
         //var data = $this.serializeArray();
-        var data = new FormData($this[0]);
-        var url = $this.attr('action');
         var valid = true;
 
         $this.find('input[required]').each(function(idx, el){
@@ -54,6 +52,54 @@ $(function () {
             return false;
         }
 
+        var showConfirm = false;
+        var editedHtml = '';
+        $this.find('.isEdited').each(function(idx, el){
+            var $el = $(el);
+            var name = $el.parent().find('.input-label').html();
+
+            editedHtml += '<li class="order-popup__list-item"><b>'+name+':</b> '+$el.val()+';</li>';
+
+            showConfirm = true;
+        });
+
+        var $container = $('#form-confirm-lk-data');
+        var $title = $container.find('.order-popup__text');
+        var $list = $container.find('.order-popup__list');
+        var $btnConfirm = $container.find('.jsBtnConfirm');
+        var $btnClose = $container.find('.jsBtnClose');
+
+        $list.hide();
+
+        $btnConfirm.hide();
+
+        $title.html('Ничего не изменено<br><br><br>');
+
+        if(showConfirm) {
+            $title.html('Вы внесли следующие изменения:');
+            $list.html(editedHtml);
+            $list.show();
+            $btnConfirm.show();
+        }
+
+        $('#form-confirm-lk-data-opener').trigger('click');
+
+        console.log(editedHtml);
+        // открываем окно подтверждения
+
+        // да все ок
+        // нет обновим страницу
+        return false;
+
+
+    });
+
+    $('.jsBtnConfirm').on('click', function() {
+
+        var $form = $('[name="jsSendUserDataForm"]');
+        var url = $form.attr('action');
+        var data = new FormData($form[0]);
+
         $.ajax({
             url: url,
             type: "post",
@@ -68,6 +114,7 @@ $(function () {
             success: function(obj) {
 
                 if (obj['hasError']) {
+                    $.fancybox.close();
                     $('.errors-container').html(obj['msg']);
                 } else {
                     $('.closer-reg').trigger('click');
@@ -84,9 +131,25 @@ $(function () {
 
             },
             error: function(p1,p2,p3) {
+                $.fancybox.close();
                 alert ('ошибка отправки данных');
                 console.log(p1,p2,p3);
             }
         });
+    });
+
+    $('.jsEditable').on('change', function() {
+        var $this = $(this);
+        var oldData = $this.data('oldvalue');
+        var newData = $this.val();
+        var flagClass = 'isEdited';
+
+        if (newData == oldData) {
+            $this.removeClass(flagClass);
+            return false;
+        }
+
+        $this.addClass(flagClass);
+
     });
 });
