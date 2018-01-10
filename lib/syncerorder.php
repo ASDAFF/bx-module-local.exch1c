@@ -425,7 +425,6 @@ class SyncerOrder implements ISyncer
 
     public function import(FtpClient $ftpClient)
     {
-
         // проверим что нет ранее запущенного импорта
         $fileFlagPath = $_SERVER["DOCUMENT_ROOT"] . '/IS_IMPORT_ORDERS';
 
@@ -471,6 +470,8 @@ class SyncerOrder implements ISyncer
         $arOrder = [];
         $arFilter = ["ACCOUNT_NUMBER" => $arData['CODES']];
         $arSelect = [];
+
+        Loader::includeModule('sale');
 
         $dbRes = \CSaleOrder::GetList($arOrder, $arFilter, false, false, $arSelect);
 

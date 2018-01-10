@@ -77,7 +77,7 @@ class SyncerStatistic implements ISyncer
                 'name' => 'statistic-create',
                 'operation' => 'import',
                 'result' => 'error',
-                'msg' => 'Отсутствуют заказа на сайте, 1С передала [' . count($ar1CProds) . '] товаров',
+                'msg' => 'Отсутствуют товары на сайте, 1С передала [' . count($ar1CProds) . '] товаров',
             ]);
             return false;
         }
@@ -231,7 +231,7 @@ class SyncerStatistic implements ISyncer
                 case 'EXT_STATUS':
                 case 'EXT_STATUS_UR':
                     $property->setValue($arData['Статус']);
-                    Debug::dump($arProp['CODE'] . ' = ' . $arData['Статус']);
+//                    Debug::dump($arProp['CODE'] . ' = ' . $arData['Статус']);
                     break;
 
                 default:
@@ -323,13 +323,13 @@ class SyncerStatistic implements ISyncer
         foreach ($ar1CProds as $key => $ar1CProd) {
             $xmlId = $ar1CProd['ИД'];
 
-            Debug::dump($xmlId);
-            Debug::dump($ar1CProd['Название']);
+//            Debug::dump($xmlId);
+//            Debug::dump($ar1CProd['Название']);
 
             if (isset($arCurrentItems[$xmlId])) {
-                Debug::dump('Update prod');
-                Debug::dump($ar1CProd['Количество']);
-                Debug::dump($ar1CProd['Цена']);
+//                Debug::dump('Update prod');
+//                Debug::dump($ar1CProd['Количество']);
+//                Debug::dump($ar1CProd['Цена']);
 
                 $arFields = [
                     'QUANTITY' => $ar1CProd['Количество'],
@@ -358,7 +358,7 @@ class SyncerStatistic implements ISyncer
                 unset($arCurrentItems[$xmlId]);
 
             } else {
-                Debug::dump('New prod');
+//                Debug::dump('New prod');
 
                 // получим товар, если его нет, то все...
                 $arOrder = [];
@@ -371,7 +371,7 @@ class SyncerStatistic implements ISyncer
                 $arRes = $dbRes->GetNext();
 
                 if(!$arRes) {
-                    Debug::dump('no product on site');
+//                    Debug::dump('no product on site');
                     Tables\SyncHistoryTable::add([
                         'name' => 'statistic-updatestatus',
                         'operation' => 'import',
@@ -423,9 +423,9 @@ class SyncerStatistic implements ISyncer
 
         // оставшиеся товары из заказа удаляем, т.к. они не пришли из 1С
         foreach ($arCurrentItems as $obCurrentItem) {
-            Debug::dump($obCurrentItem->getField('PRODUCT_XML_ID'));
-            Debug::dump($obCurrentItem->getField('NAME'));
-            Debug::dump('Delete');
+//            Debug::dump($obCurrentItem->getField('PRODUCT_XML_ID'));
+//            Debug::dump($obCurrentItem->getField('NAME'));
+//            Debug::dump('Delete');
             $obCurrentItem->delete();
         }
 
@@ -435,7 +435,7 @@ class SyncerStatistic implements ISyncer
         unset($order);
 
         if(!$res->isSuccess()) {
-            Debug::dump($res->getErrorMessages());
+//            Debug::dump($res->getErrorMessages());
             Tables\SyncHistoryTable::add([
                 'name' => 'statistic-updatefull',
                 'operation' => 'import',
@@ -519,6 +519,7 @@ class SyncerStatistic implements ISyncer
         $arFilter = ["XML_ID" => $arData['CODES']];
         $arSelect = [];
 
+        Loader::includeModule('sale');
         $dbRes = \CSaleOrder::GetList($arOrder, $arFilter, false, false, $arSelect);
 
         while ($arRes = $dbRes->GetNext()) {
@@ -530,7 +531,7 @@ class SyncerStatistic implements ISyncer
             $arResult['CNT']++;
 
             if (isset($arExistedOrders[$key])) {
-                Debug::dump('Update');
+//                Debug::dump('Update');
                 $arObj['Номер'] = $arExistedOrders[$key]['ACCOUNT_NUMBER'];
                 $res = $this->_update($arObj);
 
@@ -540,7 +541,7 @@ class SyncerStatistic implements ISyncer
                     $arResult['CNT_UPD']++;
                 }
             } else {
-                Debug::dump('New');
+//                Debug::dump('New');
                 $res = $this->_create($arObj);
 
                 if(!$res) {

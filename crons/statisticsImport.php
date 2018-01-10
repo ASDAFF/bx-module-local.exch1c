@@ -37,7 +37,7 @@ try {
         'dir' => \Bitrix\Main\Config\Option::get($module_id, $arModConf['name'] . '_FTP_EXCH_DIR'),
     ];
 
-    $fileName = \Bitrix\Main\Config\Option::get($module_id, $arModConf['name'] . '_FILE_NAME_STORES');
+    $fileName = \Bitrix\Main\Config\Option::get($module_id, $arModConf['name'] . '_FILE_NAME_STATISTICS');
     $filePrefix = \Bitrix\Main\Config\Option::get($module_id, $arModConf['name'] . '_FILE_PREFIX_IMPORT');
     $filePrefixExport = \Bitrix\Main\Config\Option::get($module_id, $arModConf['name'] . '_FILE_PREFIX_EXPORT');
     $dirServer = \Bitrix\Main\Config\Option::get($module_id, $arModConf['name'] . '_SERVER_EXCH_DIR');
@@ -57,7 +57,7 @@ try {
     echo '<br><br>';
 
     \Local\Exch1c\Tables\SyncHistoryTable::add([
-        'name' => 'order',
+        'name' => 'statistic',
         'operation' => 'prepare',
         'result' => 'error',
         'msg' => $e->getMessage(),
