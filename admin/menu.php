@@ -10,7 +10,7 @@ $aMenu = array(
     array(
         'parent_menu' => 'global_menu_store',
         'sort' => 400,
-        'text' => "Синхронизация с 1С (Проект \"Коленка\")",
+        'text' => "Кастомная Синхронизация с 1С",
         'title' => "",
         'url' => $module_id . '_main.php',
         'items_id' => $module_id . '_main'
