@@ -7,7 +7,8 @@
 
 <div class="l-tnd-pc-grid">
     <div class="l-tnd-pc-grid__body l-tnd-pc-grid__body--normal">
-        <?//*?>
+        <br>
+        <?/*?>
         <form class="c-data-filter">
             <div class="c-data-filter__label">ФИЛЬТР</div>
             <div class="c-data-filter__input-group">
@@ -71,7 +72,7 @@
                                     <th class="c-table__table-cell c-table__table-cell--header" width="15.36%;">Статус заказа</th>
                                     <th class="c-table__table-cell c-table__table-cell--header" width="15.36%;">Дата исполнения</th>
                                     <?*/?>
-                                    <th class="c-table__table-cell c-table__table-cell--header" width="15.36%;">Колличество,шт.</th>
+                                    <th class="c-table__table-cell c-table__table-cell--header" width="15.36%;">Количество,шт.</th>
                                     <th class="c-table__table-cell c-table__table-cell--header" width="15.36%;">Сумма, руб.</th>
                                 </tr>
                                 <? $j = 0; foreach ($arOrder['ITEMS'] as $arItem): $j++; ?>
@@ -240,9 +241,13 @@
         <?/*?>
         <a href="#" class="c-table__show-more-btn">Показать еще</a>
         <?*/?>
+
+        <?/*?>
         <div class="statistic-chart-container">
             <div id="chart-container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
         </div>
+        <?*/?>
+
         <?/*?>
                             <div class="l-link-center-pos">
                                 <a href="#" class="tnd-btn tnd-btn--sm-radius tnd-btn__uppercase tnd-btn--black tnd-btn--lg-fs tnd-btn--padding-fit">вернуться назад</a>
