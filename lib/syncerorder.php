@@ -283,10 +283,19 @@ class SyncerOrder implements ISyncer
         $basketItems = $basket->getBasketItems();
 
         // получим текущие товары
-        $arItems = [];
+        $arCurrentItemsIDs = [];
         foreach ($basketItems as $basketItem) {
             $arCurrentItems[$basketItem->getField('PRODUCT_XML_ID')] = $basketItem;
+            $arCurrentItemsIDs[] = $basketItem->getId();
+
+//            Debug::dump($basketItem->getField('PRODUCT_XML_ID'));
+//            Debug::dump($basketItem->getField('NAME'));
+//            Debug::dump($basketItem->getField('QUANTITY'));
+//            Debug::dump($basketItem->getField('PRICE'));
         }
+
+//        Debug::dump($arCurrentItemsIDs);
+//        Debug::dump('==========================');
 
         unset($basketItem);
 
@@ -294,13 +303,13 @@ class SyncerOrder implements ISyncer
         foreach ($arData['Товары'] as $ar1CProd) {
             $xmlId = $ar1CProd['ИД'];
 
-            Debug::dump($xmlId);
-            Debug::dump($ar1CProd['Название']);
+//            Debug::dump($xmlId);
+//            Debug::dump($ar1CProd['Название']);
 
             if (isset($arCurrentItems[$xmlId])) {
-                Debug::dump('Update');
-                Debug::dump($ar1CProd['Количество']);
-                Debug::dump($ar1CProd['Цена']);
+//                Debug::dump('Update tovar');
+//                Debug::dump($ar1CProd['Количество']);
+//                Debug::dump($ar1CProd['Цена']);
 
                 $arFields = [
                     'QUANTITY' => $ar1CProd['Количество'],
@@ -326,10 +335,13 @@ class SyncerOrder implements ISyncer
                     ]
                 ]);
 
-                unset($arCurrentItems[$xmlId]);
+                $key = array_search($arCurrentItems[$xmlId]->getId(), $arCurrentItemsIDs);
+                if($key !== false) {
+                    unset($arCurrentItemsIDs[$key]);
+                }
 
             } else {
-                Debug::dump('New');
+//                Debug::dump('New tovar');
 
                 // получим товар, если его нет, то все...
                 $arOrder = [];
@@ -377,15 +389,31 @@ class SyncerOrder implements ISyncer
                     ]
                 ]);
             }
+
         }
 
-        // оставшиеся товары из заказа удаляем, т.к. они не пришли из 1С
-        foreach ($arCurrentItems as $obCurrentItem) {
-            Debug::dump($obCurrentItem->getField('PRODUCT_XML_ID'));
-            Debug::dump($obCurrentItem->getField('NAME'));
-            Debug::dump('Delete');
-            $obCurrentItem->delete();
+        // получим обновленные данные о товарах в заказе
+        $basket = $order->getBasket();
+
+        $basketItems = $basket->getBasketItems();
+
+        // получим текущие товары
+        foreach ($basketItems as $basketItem) {
+            $arCurrentItems[$basketItem->getId()] = $basketItem;
         }
+        // оставшиеся товары из заказа удаляем, т.к. они не пришли из 1С
+        foreach ($arCurrentItemsIDs as $currentItemsID) {
+
+//            Debug::dump('Delete tovar');
+//            Debug::dump($arCurrentItems[$currentItemsID]->getField('PRODUCT_XML_ID'));
+//            Debug::dump($arCurrentItems[$currentItemsID]->getField('NAME'));
+            $arCurrentItems[$currentItemsID]->delete();
+        }
+
+        unset($arCurrentItems);
+
+//        Debug::dump($arData['Номер']);
+//        Debug::dump($arData['Товары']);
 
         $res = $order->save();
 
@@ -479,12 +507,11 @@ class SyncerOrder implements ISyncer
             $arExistedOrders[$arRes['ACCOUNT_NUMBER']] = $arRes;
         }
 
-
         foreach ($arData['OBJECTS'] as $key => $arObj) {
             $arResult['CNT']++;
 
             if (isset($arExistedOrders[$key])) {
-//                Debug::dump('Update');
+//                Debug::dump('Update order');
                 $res = $this->_update($arObj);
 
                 if(!$res) {
@@ -493,7 +520,7 @@ class SyncerOrder implements ISyncer
                     $arResult['CNT_UPD']++;
                 }
             } else {
-//                Debug::dump('New');
+//                Debug::dump('New order');
                 $res = $this->_create($arObj);
 
                 if(!$res) {
