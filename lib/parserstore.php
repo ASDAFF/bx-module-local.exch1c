@@ -65,7 +65,6 @@ class ParserStore implements IParser
 
         foreach ($xml->Номенклатура as $xmlObj) {
             $kod = self::clearStr((string) $xmlObj->ИД, '');
-            $arObjKods[] = $kod;
 
             $arObj = [
                 'Код' => $kod,
@@ -74,7 +73,14 @@ class ParserStore implements IParser
                 'Доступно' => self::clearStr((string) $xmlObj->Доступно),
             ];
 
-            $arObjs[$kod] = $arObj;
+            if (!isset($arObjs[$kod])) {
+                $arObjKods[] = $kod;
+                $arObjs[$kod]['ИТОГО'] = floatval(str_replace(',', '.', $arObj['Доступно']));
+            } else {
+                $arObjs[$kod]['ИТОГО'] += floatval(str_replace(',', '.', $arObj['Доступно']));
+            }
+
+            $arObjs[$kod]['СКЛАДЫ'][] = $arObj;
         }
 
         $arResult = [

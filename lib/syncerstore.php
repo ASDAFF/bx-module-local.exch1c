@@ -84,7 +84,7 @@ class SyncerStore implements ISyncer
         while($arItem = $dbItems->GetNext()) {
             $cntItems++;
 
-            $success = $obProduct->Update($arItem['ID'], ['QUANTITY' => $arData['OBJECTS'][$arItem['XML_ID']]['Доступно']]);
+            $success = $obProduct->Update($arItem['ID'], ['QUANTITY' => $arData['OBJECTS'][$arItem['XML_ID']]['ИТОГО']]);
 
             if ($success) {
                 $arResult['CNT_UPD']++;
@@ -95,7 +95,7 @@ class SyncerStore implements ISyncer
 
         $arResult['CNT'] = count($arData['CODES']);
         $arResult['CNT_EXIST'] = $cntItems;
-        $arResult['CNT_NO'] = count($arData['CODES']) - $cntItems;
+        $arResult['CNT_NO'] = $arResult['CNT'] - $arResult['CNT_EXIST'];
 
         // Удаляем файл на FTP
         $ftpClient->rmFtpImportFile();
