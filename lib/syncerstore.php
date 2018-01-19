@@ -63,12 +63,14 @@ class SyncerStore implements ISyncer
             'CNT_ERROR' => 0,
         ];
 
-        if (!$arData) {
+        if (count($arData['CODES']) <= 0) {
             // удалим файл-флаг статуса выгрузки
             unlink($fileFlagPath);
 
             return $arResult;
         }
+
+//        var_dump($arData);
 
         // реализуем логику импорта
 
@@ -113,6 +115,24 @@ class SyncerStore implements ISyncer
             'result' => $arResultMsg['type'],
             'msg' => $arResultMsg['msg'],
         ]);
+
+        if($arResult['CNT_NO'] < 0) {
+
+            $strRes = $arData['CODES'];
+
+            if(is_array($arData['CODES'])) {
+                $strRes = implode('; ', $arData['CODES']);
+            }
+
+            Tables\SyncHistoryTable::add([
+                'name' => 'store',
+                'operation' => 'import-bug',
+                'result' => $arResultMsg['type'],
+                'msg' => $strRes,
+            ]);
+
+            copy($_SERVER['DOCUMENT_ROOT'].'/upload/local.exch1c/1ctow_stores.xml', $_SERVER['DOCUMENT_ROOT'].'/upload/local.exch1c/1ctow_stores-bug.xml');
+        }
 
         // удалим файл-флаг статуса выгрузки
         unlink($fileFlagPath);
