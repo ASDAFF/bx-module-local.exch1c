@@ -488,6 +488,9 @@ class SyncerOrder implements ISyncer
         ];
 
         if (!$arData) {
+            // Удаляем файл на FTP
+            $ftpClient->rmFtpImportFile();
+            
             unlink($fileFlagPath);
 
             return $arResult;

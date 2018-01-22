@@ -206,6 +206,9 @@ class SyncerUser implements ISyncer
         ];
 
         if (!$arData) {
+            // Удаляем файл на FTP
+            $ftpClient->rmFtpImportFile();
+
             // удалим файл-флаг статуса выгрузки
             unlink($fileFlagPath);
 

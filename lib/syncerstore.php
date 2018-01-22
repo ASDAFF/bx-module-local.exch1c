@@ -64,6 +64,10 @@ class SyncerStore implements ISyncer
         ];
 
         if (count($arData['CODES']) <= 0) {
+
+            // Удаляем файл на FTP
+            $ftpClient->rmFtpImportFile();
+
             // удалим файл-флаг статуса выгрузки
             unlink($fileFlagPath);
 
